@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Megacubiertas Importaciones | Tejas PVC y Policarbonato - Ambato, Ecuador</title>
+  <link rel="stylesheet" href="estilos.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+
+<nav id="navbar">
+  <div class="nav-container">
+    <a href="#inicio" class="nav-logo">
+      <span class="logo-icon">⬡</span>
+      <div class="logo-text-wrap">
+        <span class="logo-text">Mega<span class="gold">cubiertas</span></span>
+        <span class="logo-sub">Importaciones</span>
+      </div>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#inicio">Inicio</a></li>
+      <li><a href="#productos">Productos</a></li>
+      <li><a href="#ventajas">Ventajas</a></li>
+      <li><a href="#galeria">Galería</a></li>
+      <li><a href="#mision">Misión & Visión</a></li>
+      <li><a href="#ubicacion">Ubicación</a></li>
+      <li><a href="#contacto">Contacto</a></li>
+      <li><a href="catalogo.html" class="nav-catalog"><i class="fas fa-book-open"></i> Catálogo</a></li>
+      <li><a href="login.html" class="nav-admin">Admin</a></li>
+    </ul>
+    <a href="#contacto" class="btn-whatsapp-nav"><i class="fab fa-whatsapp"></i> Cotizar por WhatsApp</a>
+    <button class="hamburger" id="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<section id="inicio" class="hero">
+  <div class="hero-overlay"></div>
+  <div class="hero-bg" id="heroBg"></div>
+  <div class="hero-content">
+    <div class="hero-badge" id="heroBadge"></div>
+    <h1 id="heroTitle"></h1>
+    <p id="heroDesc"></p>
+    <div class="hero-buttons">
+      <a href="#productos" class="btn-primary">Ver Catálogo</a>
+      <a href="#contacto" class="btn-secondary">Solicitar Cotización</a>
+      <a href="catalogo.html" class="btn-catalog"><i class="fas fa-book-open"></i> Ver Catálogo Digital</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num gold" id="stat1Num"></span><span class="stat-label" id="stat1Label"></span></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><span class="stat-num gold" id="stat2Num"></span><span class="stat-label" id="stat2Label"></span></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><span class="stat-num gold" id="stat3Num"></span><span class="stat-label" id="stat3Label"></span></div>
+    </div>
+  </div>
+  <div class="scroll-indicator"><i class="fas fa-chevron-down"></i></div>
+</section>
+
+<section id="quienes" class="quienes">
+  <div class="container quienes-grid">
+    <div class="quienes-img-wrap">
+      <img id="quienesImg" src="portada.jpg" alt="Bodega Megacubiertas"/>
+      <div class="quienes-badge"><i class="fas fa-award"></i></div>
+    </div>
+    <div class="quienes-content">
+      <div class="section-label">Nuestra empresa</div>
+      <h2>Quiénes Somos</h2>
+      <p class="quienes-years" id="quienesYears"></p>
+      <ul class="benefits-list" id="benefitsList"></ul>
+    </div>
+  </div>
+</section>
+
+<section id="productos" class="productos">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">Catálogo</div>
+      <h2>Nuestros Productos</h2>
+      <p>Soluciones completas para tu proyecto de cubierta</p>
+    </div>
+    <!-- Submenu filtro productos — renderizado dinámicamente desde datos.js -->
+    <div class="productos-submenu" id="productosSubmenu"></div>
+    <div class="products-grid" id="productsGrid"></div>
+    <div class="accesorios-section">
+      <h3 class="accesorios-title">Accesorios y Complementos</h3>
+      <div class="accesorios-grid" id="accesoriosGrid"></div>
+    </div>
+  </div>
+</section>
+
+<section id="ventajas" class="ventajas">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">Por qué elegirnos</div>
+      <h2>Ventajas de Nuestros Productos</h2>
+    </div>
+    <div class="ventajas-grid" id="ventajasGrid"></div>
+  </div>
+</section>
+
+<section id="galeria" class="galeria">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">Nuestros trabajos</div>
+      <h2>Galería de Instalaciones</h2>
+    </div>
+    <div class="galeria-filters">
+      <button class="filter-btn active" onclick="filterGaleria(event,'todos')">Todos</button>
+      <button class="filter-btn" onclick="filterGaleria(event,'residencial')">Residencial</button>
+      <button class="filter-btn" onclick="filterGaleria(event,'comercial')">Comercial</button>
+      <button class="filter-btn" onclick="filterGaleria(event,'industrial')">Industrial</button>
+    </div>
+    <div class="galeria-grid" id="galeriaGrid"></div>
+  </div>
+</section>
+
+<section id="mision" class="mision">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">Nuestra esencia</div>
+      <h2>Misión &amp; Visión</h2>
+    </div>
+    <div class="mv-grid">
+      <div class="mv-card">
+        <div class="mv-icon"><i class="fas fa-bullseye"></i></div>
+        <h3>Misión</h3>
+        <p id="misionText"></p>
+      </div>
+      <div class="mv-card">
+        <div class="mv-icon"><i class="fas fa-eye"></i></div>
+        <h3>Visión</h3>
+        <p id="visionText"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="ubicacion" class="ubicacion">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">Encuéntranos</div>
+      <h2>Visítanos</h2>
+    </div>
+    <div class="ubicacion-grid">
+      <div class="ubicacion-info">
+        <div class="info-item">
+          <i class="fas fa-map-marker-alt"></i>
+          <div><strong>Dirección</strong><p id="direccionText"></p></div>
+        </div>
+        <div class="info-item">
+          <i class="fas fa-clock"></i>
+          <div>
+            <strong>Horarios</strong>
+            <p id="horarioLV"></p>
+            <p id="horarioSab"></p>
+            <p id="horarioDom"></p>
+          </div>
+        </div>
+        <div class="info-item">
+          <i class="fas fa-car"></i>
+          <div><strong>Cómo llegar</strong><p>Estacionamiento disponible</p></div>
+        </div>
+        <a id="mapsBtn" href="#" target="_blank" class="btn-maps"><i class="fas fa-map"></i> Abrir en Google Maps</a>
+      </div>
+      <div class="mapa-container">
+        <iframe id="mapaFrame" src="" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="contacto" class="contacto">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">Cotiza ahora</div>
+      <h2 id="cotizacionTitulo">Solicita tu Cotización</h2>
+      <p id="cotizacionSubtitulo">Respuesta en menos de 2 horas</p>
+    </div>
+    <div class="contacto-grid">
+      <div class="contacto-form-wrap">
+        <form id="cotizacionForm" onsubmit="enviarCotizacion(event)">
+          <div class="form-group"><label>Nombre completo *</label><input type="text" placeholder="Tu nombre" required/></div>
+          <div class="form-row">
+            <div class="form-group"><label>Email</label><input type="email" placeholder="tu@email.com"/></div>
+            <div class="form-group"><label>Teléfono</label><input type="tel" placeholder="099 123 4567"/></div>
+          </div>
+          <div class="form-group"><label>Tipo de proyecto</label>
+            <select><option>Residencial</option><option>Comercial</option><option>Industrial</option></select>
+          </div>
+          <div class="form-group">
+            <label>Mensaje / Detalles</label>
+            <textarea placeholder="Cuéntanos sobre tu proyecto..." rows="4" maxlength="500" id="msgArea" oninput="countChars()"></textarea>
+            <span class="char-count"><span id="charCount">0</span>/500 caracteres</span>
+          </div>
+          <button type="submit" class="btn-submit">Enviar Solicitud</button>
+          <p class="form-note"><i class="fas fa-lock"></i> Tus datos están protegidos</p>
+        </form>
+      </div>
+      <div class="contacto-direct">
+        <h3>Contacto Directo</h3>
+        <div class="contact-items" id="whatsappNumbers"></div>
+        <div class="contact-item">
+          <i class="fas fa-envelope orange"></i>
+          <div><span class="contact-label">Email</span><a id="emailContact" href="#">-</a></div>
+        </div>
+        <button onclick="openWhatsApp()" class="btn-whatsapp-big"><i class="fab fa-whatsapp"></i> Chatear por WhatsApp</button>
+        <div class="social-links">
+          <a id="fbLink" href="#" target="_blank"><i class="fab fa-facebook-f"></i></a>
+          <a id="igLink" href="#" target="_blank"><i class="fab fa-instagram"></i></a>
+          <a id="ttLink" href="#" target="_blank"><i class="fab fa-tiktok"></i></a>
+          <a id="ytLink" href="#" target="_blank"><i class="fab fa-youtube"></i></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <span class="logo-icon">⬡</span>
+      <div class="logo-text-wrap">
+        <span class="logo-text">Mega<span class="gold">cubiertas</span></span>
+        <span class="logo-sub">Importaciones</span>
+      </div>
+      <p id="footerBrandDesc">Importadores y distribuidores al por mayor y menor de materiales de construcción, acabados, decorados, terminados y mucho más con la más alta calidad.</p>
+    </div>
+    <div class="footer-col"><h4>Productos</h4><ul>
+      <li><a href="#productos">Tejas PVC 2.5mm</a></li>
+      <li><a href="#productos">Tejas PVC 3mm</a></li>
+      <li><a href="#productos">Policarbonato 6mm</a></li>
+      <li><a href="#productos">Policarbonato 8mm</a></li>
+      <li><a href="#productos">Accesorios</a></li>
+    </ul></div>
+    <div class="footer-col"><h4>Empresa</h4><ul>
+      <li><a href="#quienes">Sobre nosotros</a></li>
+      <li><a href="#ventajas">Ventajas</a></li>
+      <li><a href="#contacto">Contacto</a></li>
+      <li><a href="catalogo.html" class="nav-catalog"><i class="fas fa-book-open"></i> Catálogo</a></li>
+    </ul></div>
+    <div class="footer-col"><h4>Contacto</h4>
+      <ul id="footerPhones"></ul>
+      <ul><li><i class="fas fa-envelope"></i> <a id="footerEmail" href="#">-</a></li>
+      <li><i class="fas fa-map-marker-alt"></i> <span id="footerAddr"></span></li></ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p id="footerCopyright">&copy; Desde 2019 &mdash; Megacubiertas Importaciones | Ambato, Ecuador</p>
+    <div class="footer-social">
+      <a id="fbFooter" href="#"><i class="fab fa-facebook-f"></i></a>
+      <a id="igFooter" href="#"><i class="fab fa-instagram"></i></a>
+      <a id="ttFooter" href="#"><i class="fab fa-tiktok"></i></a>
+    </div>
+    <div><a href="#">Términos</a> &nbsp;|&nbsp; <a href="#">Privacidad</a></div>
+  </div>
+</footer>
+
+<a href="#" onclick="openWhatsApp();return false;" class="whatsapp-float" title="Chatear por WhatsApp"><i class="fab fa-whatsapp"></i></a>
+
+<script src="datos.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

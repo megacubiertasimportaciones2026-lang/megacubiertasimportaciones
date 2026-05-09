@@ -150,7 +150,7 @@ function renderProducts(filtro) {
       ? "<img src='" + img + "' alt='" + cat.nombre + "' loading='lazy'/>"
       : "<img src='" + placeholder(cat.nombre) + "' alt='" + cat.nombre + "'/>";
 
-    var catUrl = "categoría-producto.html?cat=" + encodeURIComponent(cat.id) + "&idx=" + cats.indexOf(cat);
+    var catUrl = "categoria-producto.html?cat=" + encodeURIComponent(cat.id) + "&idx=" + cats.indexOf(cat);
 
     var itemsList = items.slice(0, 4).map(function(item) {
       return "<li><i class='fas fa-check'></i> " + item.nombre + "</li>";
@@ -220,7 +220,7 @@ function renderAccesorios() {
     var cat = cats[i];
     var count = (cat.items || []).length;
     var catId = encodeURIComponent(cat.id || String(i));
-    var url = "categoría.html?cat=" + catId + "&idx=" + i;
+    var url = "categoria.html?cat=" + catId + "&idx=" + i;
     var imgPart;
     if (cat.imagen) {
       imgPart = "<div class=\"acc-img-wrap\"><img src=\"" + cat.imagen + "\" alt=\"" + cat.nombre + "\" style=\"width:100%;height:100%;object-fit:cover\"/></div>";
@@ -317,7 +317,7 @@ function switchCardImg(thumb, mainId) {
 }
 
 function irACategoria(catId, idx) {
-  window.location = 'categoría.html?cat=' + encodeURIComponent(catId) + '&idx=' + idx;
+  window.location = 'categoria.html?cat=' + encodeURIComponent(catId) + '&idx=' + idx;
 }
 
 function toggleMenu(){ el("navLinks")&&el("navLinks").classList.toggle("open"); }

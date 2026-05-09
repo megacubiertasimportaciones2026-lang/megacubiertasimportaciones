@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Productos — Megacubiertas</title>
+  <link rel="stylesheet" href="estilos.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    .catprod-hero {
+      padding: 110px 0 40px;
+      background: linear-gradient(135deg, var(--dark) 0%, var(--dark2) 100%);
+      border-bottom: 1px solid var(--border);
+    }
+    .catprod-hero-inner { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+    .catprod-icon {
+      width: 72px; height: 72px; border-radius: 18px;
+      background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.3);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .catprod-icon i { font-size: 32px; color: var(--gold); }
+    .catprod-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 18px; }
+    .catprod-hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(24px,4vw,40px); color: var(--white); margin-bottom: 6px; }
+    .catprod-hero p { color: var(--gray); font-size: 15px; }
+    .catprod-count { font-size: 13px; color: var(--gold); font-weight: 600; margin-top: 4px; }
+
+    /* Product grid - same style as main page */
+    .catprod-section { padding: 48px 0 80px; background: var(--dark); }
+    .catprod-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 28px;
+    }
+  </style>
+</head>
+<body>
+
+<nav id="navbar">
+  <div class="nav-container">
+    <a href="index.html" class="nav-logo">
+      <span class="logo-icon">⬡</span>
+      <div class="logo-text-wrap">
+        <span class="logo-text">Mega<span class="gold">cubiertas</span></span>
+        <span class="logo-sub">Importaciones</span>
+      </div>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html#inicio">Inicio</a></li>
+      <li><a href="index.html#productos">Productos</a></li>
+      <li><a href="index.html#ventajas">Ventajas</a></li>
+      <li><a href="index.html#galeria">Galería</a></li>
+      <li><a href="index.html#contacto">Contacto</a></li>
+      <li><a href="catalogo.html" style="color:var(--gold)">Catálogo</a></li>
+    </ul>
+    <a href="index.html#contacto" class="btn-whatsapp-nav"><i class="fab fa-whatsapp"></i> Cotizar</a>
+    <button class="hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="catprod-hero">
+  <div class="container">
+    <!-- Breadcrumb -->
+    <nav style="margin-bottom:20px;font-size:13px;color:var(--gray)">
+      <a href="index.html" style="color:var(--gray);text-decoration:none">Inicio</a>
+      <span style="margin:0 8px;color:var(--border)">›</span>
+      <a href="index.html#productos" style="color:var(--gray);text-decoration:none">Productos</a>
+      <span style="margin:0 8px;color:var(--border)">›</span>
+      <span id="bcCatName" style="color:var(--gold)">Cargando...</span>
+    </nav>
+    <div class="catprod-hero-inner">
+      <div class="catprod-icon" id="catProdIcon">
+        <i class="fas fa-box" id="catProdIconI"></i>
+      </div>
+      <div>
+        <h1 id="catProdTitle">Cargando...</h1>
+        <p id="catProdDesc"></p>
+        <div class="catprod-count" id="catProdCount"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRODUCTS -->
+<section class="catprod-section">
+  <div class="container">
+    <div class="catprod-grid" id="catProdGrid"></div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <span class="logo-icon">⬡</span>
+      <div class="logo-text-wrap">
+        <span class="logo-text">Mega<span class="gold">cubiertas</span></span>
+        <span class="logo-sub">Importaciones</span>
+      </div>
+      <p>Importadores y distribuidores al por mayor y menor.</p>
+    </div>
+    <div class="footer-col"><h4>Navegación</h4><ul>
+      <li><a href="index.html#productos">Todos los productos</a></li>
+      <li><a href="catalogo.html">Catálogo digital</a></li>
+      <li><a href="index.html#contacto">Contacto</a></li>
+    </ul></div>
+    <div class="footer-col"><h4>Contacto</h4><ul id="cpFooterPhones"></ul></div>
+  </div>
+  <div class="footer-bottom">
+    <p id="cpFooterCopy">&copy; Desde 2019 &mdash; Megacubiertas Importaciones | Ambato, Ecuador</p>
+  </div>
+</footer>
+
+<a href="#" onclick="cpWA();return false;" class="whatsapp-float"><i class="fab fa-whatsapp"></i></a>
+
+<script src="datos.js"></script>
+<script>
+var SD = null;
+var currentCat = null;
+
+document.addEventListener("DOMContentLoaded", function() {
+  SD = getSiteData();
+
+  // Find category
+  var params = new URLSearchParams(window.location.search);
+  var catId  = params.get("cat") || "";
+  var catIdx = parseInt(params.get("idx") || "0");
+  var cats   = (SD.categoriasProducto && SD.categoriasProducto.length > 0) ? SD.categoriasProducto : [];
+
+  // Find by id
+  cats.forEach(function(c) { if (c.id === catId) currentCat = c; });
+  // Fallback by index
+  if (!currentCat && catIdx >= 0 && catIdx < cats.length) currentCat = cats[catIdx];
+  // Fallback first
+  if (!currentCat && cats.length > 0) currentCat = cats[0];
+
+  if (!currentCat) {
+    document.getElementById("catProdTitle").textContent = "Categoría no encontrada";
+    return;
+  }
+
+  // Set hero
+  document.title = currentCat.nombre + " — Megacubiertas";
+  document.getElementById("bcCatName").textContent   = currentCat.nombre;
+  document.getElementById("catProdTitle").textContent = currentCat.nombre;
+  document.getElementById("catProdDesc").textContent  = currentCat.descripcion || "";
+
+  var iconEl = document.getElementById("catProdIcon");
+  if (currentCat.imagen) {
+    iconEl.innerHTML = "<img src='" + currentCat.imagen + "' alt='" + currentCat.nombre + "'/>";
+  } else {
+    document.getElementById("catProdIconI").className = currentCat.icono || "fas fa-box";
+  }
+
+  var items = currentCat.items || [];
+  document.getElementById("catProdCount").textContent = items.length + " producto" + (items.length !== 1 ? "s" : "") + " disponibles";
+
+  renderItems(items);
+  setupFooter();
+
+  window.addEventListener("scroll", function() {
+    var n = document.getElementById("navbar");
+    if (n) n.classList.toggle("scrolled", window.scrollY > 60);
+  });
+});
+
+function renderItems(items) {
+  var grid = document.getElementById("catProdGrid");
+  if (!grid) return;
+
+  if (items.length === 0) {
+    grid.innerHTML = "<div style='grid-column:1/-1;text-align:center;padding:60px;color:var(--gray)'>" +
+      "<i class='fas fa-box-open' style='font-size:48px;color:var(--gold);opacity:0.3;display:block;margin-bottom:16px'></i>" +
+      "<p>No hay productos en esta categoría aún.</p>" +
+      "<a href='index.html#productos' style='color:var(--gold);margin-top:12px;display:inline-block'>← Volver a productos</a></div>";
+    return;
+  }
+
+  var nums = (SD.contacto && SD.contacto.whatsappNumbers) || [];
+  var html = "";
+  items.forEach(function(item) {
+    var img = item.imagen || "";
+    var imgHtml = img
+      ? "<img src='" + img + "' alt='" + item.nombre + "' loading='lazy'/>"
+      : "<img src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22220%22%3E%3Crect width=%22400%22 height=%22220%22 fill=%22%231A1A1A%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-family=%22Arial%22 font-size=%2214%22 fill=%22%23C9A84C%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22%3E" + encodeURIComponent(item.nombre) + "%3C/text%3E%3C/svg%3E' alt='" + item.nombre + "'/>";
+
+    var caract = (item.caracteristicas||[]).map(function(c){
+      return "<li><i class='fas fa-check'></i> " + c + "</li>";
+    }).join("");
+
+    var badge = item.badge ? "<span class='product-badge badge-" + item.badgeColor + "'>" + item.badge + "</span>" : "";
+    var itemId = encodeURIComponent(String(item.id));
+
+    // Color dots if available
+    var colorDots = "";
+    if (item.colores && item.colores.length > 0) {
+      colorDots = "<div style='display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap'>" +
+        item.colores.slice(0,6).map(function(c){
+          return "<div style='width:16px;height:16px;border-radius:50%;background:" + (c.hex||"#888") + ";border:2px solid rgba(255,255,255,0.2)' title='" + c.nombre + "'></div>";
+        }).join("") + "</div>";
+    }
+
+    html += "<div class='product-card'>" +
+      badge +
+      "<div class='product-img-wrap'>" + imgHtml + "</div>" +
+      "<div class='product-info'>" +
+        "<h3>" + item.nombre + "</h3>" +
+        colorDots +
+        "<ul>" + caract + "</ul>" +
+        "<button class='btn-spec' data-id='" + itemId + "' onclick=\"window.location='detalle.html?tipo=producto&id='+this.dataset.id\">" +
+          "Ver detalle <i class='fas fa-arrow-right'></i>" +
+        "</button>" +
+      "</div>" +
+    "</div>";
+  });
+
+  grid.innerHTML = html;
+}
+
+function setupFooter() {
+  var fp = document.getElementById("cpFooterPhones");
+  var nums = (SD.contacto && SD.contacto.whatsappNumbers) || [];
+  if (fp) fp.innerHTML = nums.map(function(w){ return "<li><i class='fab fa-whatsapp'></i> +" + w.numero + "</li>"; }).join("");
+  var fc = document.getElementById("cpFooterCopy");
+  if (fc && SD.contacto && SD.contacto.footerCopyright) fc.innerHTML = SD.contacto.footerCopyright;
+}
+
+function cpWA() {
+  var nums = (SD && SD.contacto && SD.contacto.whatsappNumbers) || [];
+  var msg = encodeURIComponent("Hola! Me interesan sus productos. ¿Pueden ayudarme?");
+  if (nums.length > 0) window.open("https://wa.me/" + nums[0].numero + "?text=" + msg, "_blank");
+}
+</script>
+</body>
+</html>
