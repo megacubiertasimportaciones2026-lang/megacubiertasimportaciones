@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Detalle — Megacubiertas</title>
+  <link rel="stylesheet" href="estilos.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    /* ── DETALLE PAGE ── */
+    .detalle-hero {
+      padding: 120px 0 60px;
+      background: var(--dark2);
+      border-bottom: 1px solid var(--border);
+    }
+    .detalle-breadcrumb {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--gray); margin-bottom: 24px;
+    }
+    .detalle-breadcrumb a { color: var(--gold); text-decoration: none; }
+    .detalle-breadcrumb a:hover { text-decoration: underline; }
+    .detalle-breadcrumb i { font-size: 10px; }
+
+    .detalle-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start;
+    }
+    .detalle-gallery { display: flex; flex-direction: column; gap: 12px; }
+    .main-img-wrap {
+      border-radius: 16px; overflow: hidden;
+      border: 2px solid var(--border); aspect-ratio: 4/3;
+      background: var(--dark3); position: relative;
+    }
+    .main-img-wrap img {
+      width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s;
+    }
+    .main-img-wrap:hover img { transform: scale(1.03); }
+    .thumb-strip {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      overflow-x: auto;
+      padding: 4px 2px 8px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--gold) transparent;
+    }
+    .thumb {
+      width: 72px; height: 72px; border-radius: 10px; overflow: hidden;
+      border: 2px solid var(--border); cursor: pointer; transition: border-color 0.2s;
+      flex-shrink: 0;
+    }
+    .thumb:hover, .thumb.active { border-color: var(--gold); }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* Info panel */
+    .detalle-info { display: flex; flex-direction: column; gap: 20px; }
+    .detalle-badge {
+      display: inline-block; font-size: 11px; font-weight: 700;
+      padding: 4px 12px; border-radius: 20px; width: fit-content;
+    }
+    .detalle-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(26px, 3vw, 38px); color: var(--white); line-height: 1.2;
+    }
+    .detalle-desc { font-size: 15px; color: var(--gray); line-height: 1.8; }
+
+    /* SubMenu Tabs */
+    .detalle-tabs {
+      display: flex; gap: 4px; border-bottom: 1px solid var(--border);
+      padding-bottom: 0; flex-wrap: wrap; margin-top: 8px;
+    }
+    .dtab {
+      background: none; border: none; color: var(--gray);
+      padding: 10px 18px; font-size: 14px; font-weight: 600;
+      cursor: pointer; border-bottom: 3px solid transparent;
+      transition: all 0.2s; font-family: 'Barlow', sans-serif;
+      white-space: nowrap;
+    }
+    .dtab:hover { color: var(--white); }
+    .dtab.active { color: var(--gold); border-bottom-color: var(--gold); }
+    .dtab-content { display: none; padding: 20px 0; }
+    .dtab-content.active { display: block; }
+
+    /* Características */
+    .caract-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .caract-list li {
+      display: flex; align-items: center; gap: 12px;
+      font-size: 14px; color: rgba(245,240,232,0.85);
+      background: var(--dark3); border: 1px solid var(--border);
+      padding: 10px 16px; border-radius: 10px;
+    }
+    .caract-list li i { color: var(--gold); width: 18px; text-align: center; }
+
+    /* Colores */
+    .colores-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px;
+    }
+    .color-card {
+      border-radius: 12px; overflow: hidden;
+      border: 2px solid var(--border); cursor: pointer;
+      transition: all 0.2s; background: var(--dark3);
+    }
+    .color-card:hover, .color-card.selected { border-color: var(--gold); transform: translateY(-3px); }
+    .color-card img { width: 100%; height: 90px; object-fit: cover; }
+    .color-card .color-name {
+      padding: 8px; font-size: 12px; font-weight: 600;
+      color: var(--white); text-align: center;
+    }
+    .color-swatch-box {
+      height: 90px; display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+    }
+    .no-colors { color: var(--gray); font-size: 14px; padding: 20px 0; }
+
+    /* Ficha técnica */
+    .ficha-table { width: 100%; border-collapse: collapse; }
+    .ficha-table tr { border-bottom: 1px solid var(--border); }
+    .ficha-table td {
+      padding: 12px 16px; font-size: 14px;
+    }
+    .ficha-table td:first-child { color: var(--gold); font-weight: 600; width: 40%; }
+    .ficha-table td:last-child { color: rgba(245,240,232,0.85); }
+    .ficha-table tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+    /* CTA Whatsapp */
+    .detalle-cta {
+      display: flex; gap: 12px; flex-wrap: wrap; padding-top: 8px;
+    }
+    .btn-wa-detalle {
+      background: linear-gradient(135deg, #25D366, #128C7E);
+      color: #fff; border: none; padding: 12px 24px; border-radius: 10px;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+      font-family: 'Barlow', sans-serif; transition: all 0.2s;
+    }
+    .btn-wa-detalle:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37,211,102,0.35); }
+    .btn-back-detalle {
+      background: transparent; color: var(--white);
+      border: 1px solid var(--border); padding: 12px 24px; border-radius: 10px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+      font-family: 'Barlow', sans-serif; transition: all 0.2s;
+      text-decoration: none;
+    }
+    .btn-back-detalle:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* Productos similares */
+    .similares-section { padding: 80px 0; background: var(--dark); }
+    .similares-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;
+    }
+    .similar-card {
+      background: var(--dark2); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden; cursor: pointer;
+      transition: all 0.3s;
+    }
+    .similar-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(201,168,76,0.15); }
+    .similar-card img { width: 100%; height: 140px; object-fit: cover; }
+    .similar-card .sc-info { padding: 14px; }
+    .similar-card .sc-info h4 { font-size: 14px; font-weight: 700; color: var(--white); margin-bottom: 6px; }
+    .similar-card .sc-info p { font-size: 12px; color: var(--gray); }
+    .similar-card .sc-btn {
+      width: 100%; background: rgba(201,168,76,0.1); border: 1px solid var(--gold);
+      color: var(--gold); padding: 8px; border-radius: 8px; font-size: 12px;
+      font-weight: 700; cursor: pointer; margin-top: 10px;
+      font-family: 'Barlow', sans-serif; transition: all 0.2s;
+    }
+    .similar-card .sc-btn:hover { background: rgba(201,168,76,0.2); }
+
+    /* Lightbox */
+    .lightbox {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,0.92); align-items: center; justify-content: center;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img { max-width: 90vw; max-height: 85vh; border-radius: 12px; }
+    .lightbox-close {
+      position: fixed; top: 20px; right: 24px;
+      background: none; border: none; color: #fff; font-size: 32px; cursor: pointer;
+    }
+
+    @media(max-width:768px){
+      .detalle-grid { grid-template-columns: 1fr; }
+      .colores-grid { grid-template-columns: repeat(3,1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav id="navbar">
+  <div class="nav-container">
+    <a href="index.html" class="nav-logo">
+      <span class="logo-icon">⬡</span>
+      <span class="logo-text">Mega<span class="gold">cubiertas</span></span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html#inicio">Inicio</a></li>
+      <li><a href="index.html#productos">Productos</a></li>
+      <li><a href="index.html#ventajas">Ventajas</a></li>
+      <li><a href="index.html#galeria">Galería</a></li>
+      <li><a href="index.html#contacto">Contacto</a></li>
+      <li style="display:none"><a href="login.html" class="nav-admin">Admin</a></li>
+    </ul>
+    <a href="index.html#contacto" class="btn-whatsapp-nav"><i class="fab fa-whatsapp"></i> Cotizar</a>
+    <button class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<!-- DETALLE HERO -->
+<section class="detalle-hero">
+  <div class="container">
+    <div class="detalle-breadcrumb" id="breadcrumb">
+      <a href="index.html">Inicio</a>
+      <i class="fas fa-chevron-right"></i>
+      <a href="index.html#productos">Productos</a>
+      <i class="fas fa-chevron-right"></i>
+      <span id="breadcrumbName">Cargando...</span>
+    </div>
+
+    <div class="detalle-grid">
+      <!-- Galería -->
+      <div class="detalle-gallery">
+        <div class="main-img-wrap" onclick="openLightbox(currentMainImg)">
+          <img id="mainImg" src="" alt="Producto"/>
+        </div>
+        <div class="thumb-strip" id="thumbStrip"></div>
+      </div>
+
+      <!-- Info -->
+      <div class="detalle-info">
+        <span class="detalle-badge" id="detalleBadge"></span>
+        <h1 class="detalle-title" id="detalleTitle">Cargando...</h1>
+        <p class="detalle-desc" id="detalleDesc"></p>
+
+        <!-- SUBMENU TABS -->
+        <div class="detalle-tabs">
+          <button class="dtab active" onclick="showDTab('caracteristicas',this)">
+            <i class="fas fa-list-check"></i> Características
+          </button>
+          <button class="dtab" onclick="showDTab('colores',this)">
+            <i class="fas fa-palette"></i> Colores
+          </button>
+          <button class="dtab" onclick="showDTab('ficha',this)">
+            <i class="fas fa-file-alt"></i> Ficha Técnica
+          </button>
+        </div>
+
+        <!-- Tab: Características -->
+        <div class="dtab-content active" id="dtab-caracteristicas">
+          <ul class="caract-list" id="caractList"></ul>
+        </div>
+
+        <!-- Tab: Colores -->
+        <div class="dtab-content" id="dtab-colores">
+          <div class="colores-grid" id="coloresGrid"></div>
+        </div>
+
+        <!-- Tab: Ficha Técnica -->
+        <div class="dtab-content" id="dtab-ficha">
+          <table class="ficha-table" id="fichaTable"></table>
+        </div>
+
+        <!-- CTA -->
+        <div class="detalle-cta">
+          <button class="btn-wa-detalle" id="btnWa">
+            <i class="fab fa-whatsapp"></i> Solicitar Cotización
+          </button>
+          <a href="index.html#productos" class="btn-back-detalle">
+            <i class="fas fa-arrow-left"></i> Ver todos
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRODUCTOS SIMILARES -->
+<section class="similares-section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">También te puede interesar</div>
+      <h2>Productos Similares</h2>
+    </div>
+    <div class="similares-grid" id="similaresGrid"></div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <span class="logo-icon">⬡</span>
+      <span class="logo-text">Mega<span class="gold">cubiertas</span></span>
+      <p>Importadores directos de tejas PVC y policarbonato en Ambato, Ecuador.</p>
+    </div>
+    <div class="footer-col"><h4>Productos</h4><ul>
+      <li><a href="index.html#productos">Tejas PVC</a></li>
+      <li><a href="index.html#productos">Policarbonato</a></li>
+      <li><a href="index.html#productos">Accesorios</a></li>
+    </ul></div>
+    <div class="footer-col"><h4>Contacto</h4>
+      <ul id="footerPhonesD"></ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2025 Megacubiertas Importaciones | Ambato, Ecuador</p>
+  </div>
+</footer>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()"><i class="fas fa-times"></i></button>
+  <img id="lightboxImg" src="" alt=""/>
+</div>
+
+<script src="datos.js"></script>
+<script>
+// ── INIT ──────────────────────────────────────────────────────
+let currentItem = null;
+let currentType = "producto"; // "producto" | "accesorio"
+let currentMainImg = "";
+
+function getAllProductos() {
+  var cats = (SITE_DATA && SITE_DATA.categoriasProducto) ? SITE_DATA.categoriasProducto : [];
+  var result = [];
+  cats.forEach(function(cat) {
+    (cat.items||[]).forEach(function(item){
+      result.push(Object.assign({}, item, {_cat: cat.nombre}));
+    });
+  });
+  return result;
+}
+document.addEventListener("DOMContentLoaded", () => {
+  SITE_DATA = getSiteData();
+  const params = new URLSearchParams(window.location.search);
+  const tipo = params.get("tipo") || "producto";
+  const id   = params.get("id"); // keep as string - new items use string IDs like "pi-xxx"
+  currentType = tipo;
+
+  if (tipo === "accesorio") {
+    loadAccesorio(id);
+  } else {
+    loadProducto(id);
+  }
+  setupScrollEffects();
+  // Footer phones
+  const fp = document.getElementById("footerPhonesD");
+  if(fp) fp.innerHTML = (SITE_DATA.contacto.whatsappNumbers||[]).map(w=>`<li><i class="fab fa-whatsapp"></i> +${w.numero}</li>`).join("");
+});
+
+// ── PRODUCTO ──────────────────────────────────────────────────
+function loadProducto(id) {
+  const prod = getAllProductos().find(function(p){ return String(p.id) === String(id); });
+  if (!prod) { document.getElementById("detalleTitle").textContent = "Producto no encontrado"; return; }
+  currentItem = prod;
+
+  document.title = prod.nombre + " — Megacubiertas";
+  document.getElementById("breadcrumbName").textContent = prod.nombre;
+  document.getElementById("detalleTitle").textContent = prod.nombre;
+  document.getElementById("detalleDesc").textContent = prod.descripcion || "Producto de alta calidad importado directamente. Consulta especificaciones y disponibilidad.";
+
+  // Badge
+  const badge = document.getElementById("detalleBadge");
+  if (prod.badge) {
+    badge.textContent = prod.badge;
+    badge.className = `detalle-badge badge-${prod.badgeColor}`;
+  } else { badge.style.display = "none"; }
+
+  // Galería de imágenes
+  const fotos = prod.fotos && prod.fotos.length > 0 ? prod.fotos : [prod.imagen].filter(Boolean);
+  buildGallery(fotos, prod.nombre);
+
+  // Características
+  const list = document.getElementById("caractList");
+  list.innerHTML = (prod.caracteristicas||[]).map(c=>`<li><i class="fas fa-check-circle"></i> ${c}</li>`).join("");
+
+  // Colores
+  buildColores(prod.colores || []);
+
+  // Ficha técnica
+  buildFicha(prod.ficha || []);
+
+  // WhatsApp
+  document.getElementById("btnWa").onclick = () => {
+    const msg = `Hola! Me interesa cotizar: *${prod.nombre}*. ¿Pueden ayudarme?`;
+    const first = (SITE_DATA.contacto.whatsappNumbers||[])[0];
+    if(first) window.open(`https://wa.me/${first.numero}?text=${encodeURIComponent(msg)}`,"_blank");
+  };
+
+  // Similares
+  buildSimilares(prod);
+}
+
+// ── ACCESORIO ─────────────────────────────────────────────────
+function loadAccesorio(idx) {
+  const acc = (SITE_DATA.accesorios||[])[idx];
+  if (!acc) { document.getElementById("detalleTitle").textContent = "Accesorio no encontrado"; return; }
+  currentItem = acc;
+
+  document.title = acc.nombre + " — Megacubiertas";
+  document.getElementById("breadcrumbName").textContent = acc.nombre;
+  document.getElementById("detalleTitle").textContent = acc.nombre;
+  document.getElementById("detalleDesc").textContent = acc.descripcion || "Accesorio de alta calidad para instalación de cubiertas.";
+  document.getElementById("detalleBadge").style.display = "none";
+
+  // Galería
+  const fotos = acc.fotos && acc.fotos.length > 0 ? acc.fotos : acc.imagen ? [acc.imagen] : [];
+  buildGallery(fotos, acc.nombre);
+
+  // Características
+  const list = document.getElementById("caractList");
+  list.innerHTML = (acc.caracteristicas||["Compatible con todas nuestras cubiertas","Alta durabilidad","Fácil instalación"]).map(c=>`<li><i class="fas fa-check-circle"></i> ${c}</li>`).join("");
+
+  // Colores
+  buildColores(acc.colores || []);
+
+  // Ficha
+  buildFicha(acc.ficha || []);
+
+  // WhatsApp
+  document.getElementById("btnWa").onclick = () => {
+    const msg = `Hola! Me interesa cotizar el accesorio: *${acc.nombre}*. ¿Pueden ayudarme?`;
+    const first = (SITE_DATA.contacto.whatsappNumbers||[])[0];
+    if(first) window.open(`https://wa.me/${first.numero}?text=${encodeURIComponent(msg)}`,"_blank");
+  };
+
+  // Similares (otros accesorios)
+  buildSimilaresAccesorios(idx);
+}
+
+// ── GALLERY ───────────────────────────────────────────────────
+function buildGallery(fotos, nombre) {
+  var ph = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect width='400' height='300' fill='%231A1A1A'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='16' fill='%23C9A84C' text-anchor='middle' dominant-baseline='middle'%3ESin+imagen%3C/text%3E%3C/svg%3E";
+  var mainSrc = (fotos && fotos.length > 0) ? fotos[0] : ph;
+  currentMainImg = mainSrc;
+
+  var mainImg = document.getElementById("mainImg");
+  if (mainImg) {
+    mainImg.src = mainSrc;
+    mainImg.onerror = function(){ mainImg.src = ph; };
+  }
+
+  var strip = document.getElementById("thumbStrip");
+  if (!strip) return;
+
+  if (!fotos || fotos.length <= 1) {
+    strip.style.display = "none";
+    return;
+  }
+
+  strip.style.display = "flex";
+  var html = "";
+  for (var i = 0; i < fotos.length; i++) {
+    html += "<div class='thumb " + (i===0?"active":"") + "' data-src='" + fotos[i] + "' onclick='switchImgByData(this)'>" +
+      "<img src='" + fotos[i] + "'/>" +
+      "</div>";
+  }
+  strip.innerHTML = html;
+
+  // Show photo count badge on main image
+  var countBadge = document.getElementById("photoCountBadge");
+  if (!countBadge) {
+    countBadge = document.createElement("div");
+    countBadge.id = "photoCountBadge";
+    countBadge.style.cssText = "position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,0.7);color:#fff;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;z-index:2;backdrop-filter:blur(4px)";
+    var wrap = document.querySelector(".main-img-wrap");
+    if (wrap) { wrap.style.position = "relative"; wrap.appendChild(countBadge); }
+  }
+  countBadge.innerHTML = "<i class='fas fa-images'></i> " + fotos.length + " fotos";
+}
+
+function switchImg(src, thumb) {
+  currentMainImg = src;
+  var img = document.getElementById("mainImg");
+  if (img) img.src = src;
+  document.querySelectorAll(".thumb").forEach(function(t){ t.classList.remove("active"); });
+  if (thumb) thumb.classList.add("active");
+}
+
+function switchImgByData(thumb) {
+  var src = thumb.dataset.src;
+  if (!src) return;
+  switchImg(src, thumb);
+}
+
+// ── COLORES ───────────────────────────────────────────────────
+function buildColores(colores) {
+  const grid = document.getElementById("coloresGrid");
+  if (!colores || colores.length === 0) {
+    grid.innerHTML = `<p class="no-colors"><i class="fas fa-info-circle"></i> Consultar colores disponibles por WhatsApp</p>`;
+    return;
+  }
+  grid.innerHTML = colores.map((c,i) => `
+    <div class="color-card ${i===0?'selected':''}" onclick="selectColor(this,'${c.imagen||''}','${c.nombre}')">
+      ${c.imagen
+        ? `<img src="${c.imagen}" onerror="this.style.display='none'"/>`
+        : `<div class="color-swatch-box" style="background:${c.hex||'#1A1A1A'}"></div>`}
+      <div class="color-name">${c.nombre}</div>
+    </div>`).join("");
+}
+
+function selectColor(el, img, nombre) {
+  document.querySelectorAll(".color-card").forEach(c=>c.classList.remove("selected"));
+  el.classList.add("selected");
+  if (img) { currentMainImg = img; document.getElementById("mainImg").src = img; }
+}
+
+// ── FICHA TÉCNICA ─────────────────────────────────────────────
+function buildFicha(ficha) {
+  const table = document.getElementById("fichaTable");
+  const defaults = currentType === "producto" ? [
+    ["Tipo","PVC / Policarbonato"],["Garantía","Garantía de fábrica"],["Uso","Residencial, Comercial, Industrial"],
+    ["Instalación","Fácil montaje"],["Disponibilidad","Stock permanente"]
+  ] : [["Compatibilidad","Todos nuestros productos"],["Material","Alta calidad"],["Disponibilidad","Stock permanente"]];
+  const rows = ficha && ficha.length > 0 ? ficha : defaults;
+  table.innerHTML = rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join("");
+}
+
+// ── SIMILARES ─────────────────────────────────────────────────
+function buildSimilares(prod) {
+  var grid = document.getElementById("similaresGrid");
+  var section = document.querySelector(".similares-section");
+  if (!grid) return;
+
+  var otros = [];
+
+  // If product is from a category (has _categoria), show siblings from same category
+  if (prod._categoria) {
+    var cats = (SITE_DATA.categoriasProducto) || [];
+    var parentCat = null;
+    cats.forEach(function(cat) {
+      if (cat.nombre === prod._categoria) parentCat = cat;
+    });
+    if (parentCat && parentCat.items) {
+      otros = parentCat.items.filter(function(p) {
+        return String(p.id) !== String(prod.id);
+      }).slice(0, 4);
+    }
+  }
+
+  // Hide section if nothing to show
+  if (otros.length === 0) {
+    if (section) section.style.display = "none";
+    return;
+  }
+  if (section) section.style.display = "";
+
+  var ph = function(n) {
+    return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='160'%3E%3Crect width='300' height='160' fill='%231A1A1A'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='13' fill='%23C9A84C' text-anchor='middle' dominant-baseline='middle'%3E" + encodeURIComponent(n.slice(0,20)) + "%3C/text%3E%3C/svg%3E";
+  };
+
+  grid.innerHTML = otros.map(function(p) {
+    var img = p.imagen || ph(p.nombre||"");
+    var pid = encodeURIComponent(String(p.id));
+    var desc = (p.caracteristicas && p.caracteristicas[0]) ? p.caracteristicas[0] : (p.descripcion || "");
+      return "<div class='similar-card' data-pid='" + pid + "' onclick='window.location=\"detalle.html?tipo=producto&id=\"+this.dataset.pid'>" +
+      "<div class='similar-img-wrap'><img src='" + img + "' alt='" + (p.nombre||"") + "'/></div>" +
+      "<div class='similar-info'>" +
+        "<h4>" + (p.nombre||"") + "</h4>" +
+        "<p>" + desc + "</p>" +
+        "<button class='btn-similar'>Ver detalle <i class='fas fa-arrow-right'></i></button>" +
+      "</div>" +
+    "</div>";
+  }).join("");
+}
+
+
+function buildSimilaresAccesorios(idx) {
+  const otros = (SITE_DATA.accesorios||[]).filter((_,i)=>i!==idx);
+  const grid = document.getElementById("similaresGrid");
+  grid.innerHTML = otros.map((a,i)=>`
+    <div class="similar-card" onclick="window.location='detalle.html?tipo=accesorio&id=${i<idx?i:i+1}'">
+      ${a.imagen?`<img src="${a.imagen}"/>`:`<div style="height:140px;background:var(--dark3);display:flex;align-items:center;justify-content:center"><i class="${a.icono||'fas fa-cube'}" style="font-size:40px;color:var(--gold)"></i></div>`}
+      <div class="sc-info">
+        <h4>${a.nombre}</h4>
+        <p>Accesorio para cubierta</p>
+        <button class="sc-btn"><i class="fas fa-eye"></i> Ver detalle</button>
+      </div>
+    </div>`).join("");
+}
+
+// ── TABS ──────────────────────────────────────────────────────
+function showDTab(tab, btn) {
+  document.querySelectorAll(".dtab-content").forEach(t=>t.classList.remove("active"));
+  document.querySelectorAll(".dtab").forEach(b=>b.classList.remove("active"));
+  document.getElementById("dtab-"+tab).classList.add("active");
+  btn.classList.add("active");
+}
+
+// ── LIGHTBOX ──────────────────────────────────────────────────
+function openLightbox(src) {
+  document.getElementById("lightboxImg").src = src;
+  document.getElementById("lightbox").classList.add("open");
+}
+function closeLightbox() { document.getElementById("lightbox").classList.remove("open"); }
+
+function setupScrollEffects(){
+  window.addEventListener("scroll",()=>{
+    document.getElementById("navbar").classList.toggle("scrolled",window.scrollY>60);
+  });
+}
+function toggleMenu(){ document.getElementById("navLinks").classList.toggle("open"); }
+</script>
+</body>
+</html>

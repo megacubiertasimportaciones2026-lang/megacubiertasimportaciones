@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin — Megacubiertas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Barlow:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Barlow',sans-serif;background:#0A0A0A;min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+    .bg{position:fixed;inset:0;background:url('portada.jpg') center/cover no-repeat;filter:brightness(0.15);z-index:0}
+    .card{position:relative;z-index:1;background:rgba(26,26,26,0.95);border:1px solid rgba(201,168,76,0.3);border-radius:24px;padding:48px 40px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.6)}
+    .logo{text-align:center;margin-bottom:32px}
+    .logo-icon{font-size:40px;color:#C9A84C;display:block;margin-bottom:10px}
+    .logo h1{font-family:'Playfair Display',serif;font-size:26px;color:#F5F0E8}
+    .logo h1 span{color:#C9A84C}
+    .logo p{font-size:13px;color:#888;margin-top:6px}
+    .form-group{margin-bottom:20px}
+    .form-group label{display:block;font-size:13px;font-weight:600;color:rgba(245,240,232,0.7);margin-bottom:8px}
+    .input-wrap{position:relative}
+    .input-wrap i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#888;font-size:15px}
+    .input-wrap input{width:100%;background:#111;border:1px solid rgba(201,168,76,0.2);color:#F5F0E8;padding:12px 14px 12px 42px;border-radius:10px;font-size:15px;font-family:'Barlow',sans-serif;outline:none;transition:border-color 0.2s}
+    .input-wrap input:focus{border-color:#C9A84C}
+    .toggle-pw{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#888;cursor:pointer;font-size:15px;padding:4px}
+    .toggle-pw:hover{color:#C9A84C}
+    .btn-login{width:100%;background:linear-gradient(135deg,#C9A84C,#9A7530);color:#0A0A0A;border:none;padding:14px;border-radius:10px;font-size:16px;font-weight:700;font-family:'Barlow',sans-serif;cursor:pointer;margin-top:8px;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:10px}
+    .btn-login:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(201,168,76,0.4)}
+    .btn-login:active{transform:translateY(0)}
+    .error-msg{background:rgba(232,64,64,0.12);border:1px solid rgba(232,64,64,0.4);color:#ff6b6b;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;display:none;align-items:center;gap:8px}
+    .error-msg.show{display:flex}
+    .back-link{text-align:center;margin-top:24px}
+    .back-link a{color:#888;font-size:13px;text-decoration:none;transition:color 0.2s}
+    .back-link a:hover{color:#C9A84C}
+    .shake{animation:shake 0.4s ease}
+    @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+    .change-pw-link{text-align:center;margin-top:12px}
+    .change-pw-link button{background:none;border:none;color:#888;font-size:12px;cursor:pointer;font-family:'Barlow',sans-serif}
+    .change-pw-link button:hover{color:#C9A84C}
+    /* Panel cambio contraseña */
+    .change-panel{display:none;margin-top:20px;padding-top:20px;border-top:1px solid rgba(201,168,76,0.15)}
+    .change-panel.show{display:block}
+    .change-panel h4{font-size:14px;color:#C9A84C;margin-bottom:14px;font-weight:700}
+    .btn-change{width:100%;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);color:#C9A84C;padding:10px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Barlow',sans-serif;transition:all 0.2s}
+    .btn-change:hover{background:rgba(201,168,76,0.2)}
+    .success-msg{background:rgba(37,211,102,0.12);border:1px solid rgba(37,211,102,0.3);color:#25D366;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;display:none;align-items:center;gap:8px}
+    .success-msg.show{display:flex}
+  </style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="card" id="loginCard">
+  <div class="logo">
+    <span class="logo-icon">⬡</span>
+    <h1>Mega<span>cubiertas</span></h1>
+    <p>Panel de Administración</p>
+  </div>
+
+  <div class="error-msg" id="errorMsg"><i class="fas fa-exclamation-circle"></i> <span id="errorText">Contraseña incorrecta</span></div>
+  <div class="success-msg" id="successMsg"><i class="fas fa-check-circle"></i> <span id="successText">Contraseña cambiada</span></div>
+
+  <form onsubmit="doLogin(event)">
+    <div class="form-group">
+      <label><i class="fas fa-lock"></i> Contraseña</label>
+      <div class="input-wrap">
+        <i class="fas fa-key"></i>
+        <input type="password" id="pwInput" placeholder="Ingresa tu contraseña" autocomplete="current-password"/>
+        <button type="button" class="toggle-pw" onclick="togglePw()"><i class="fas fa-eye" id="eyeIcon"></i></button>
+      </div>
+    </div>
+    <button type="submit" class="btn-login"><i class="fas fa-sign-in-alt"></i> Ingresar al Panel</button>
+  </form>
+
+  <div class="change-pw-link">
+    <button onclick="toggleChangePanel()">¿Cambiar contraseña?</button>
+  </div>
+
+  <div class="change-panel" id="changePanel">
+    <h4><i class="fas fa-lock"></i> Cambiar Contraseña</h4>
+    <div class="form-group">
+      <label>Contraseña actual</label>
+      <div class="input-wrap">
+        <i class="fas fa-key"></i>
+        <input type="password" id="currentPw" placeholder="Contraseña actual"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Nueva contraseña</label>
+      <div class="input-wrap">
+        <i class="fas fa-lock"></i>
+        <input type="password" id="newPw" placeholder="Nueva contraseña (mín. 4 caracteres)"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Confirmar nueva contraseña</label>
+      <div class="input-wrap">
+        <i class="fas fa-lock"></i>
+        <input type="password" id="confirmPw" placeholder="Repite la nueva contraseña"/>
+      </div>
+    </div>
+    <button class="btn-change" onclick="changePassword()"><i class="fas fa-save"></i> Guardar nueva contraseña</button>
+  </div>
+
+  <div class="back-link"><a href="index.html"><i class="fas fa-arrow-left"></i> Volver al sitio</a></div>
+</div>
+
+<script>
+  // Contraseña por defecto: admin123
+  const DEFAULT_PW = "admin123";
+  const PW_KEY = "mc_admin_pw";
+
+  function getPassword() {
+    return localStorage.getItem(PW_KEY) || DEFAULT_PW;
+  }
+
+  function doLogin(e) {
+    e.preventDefault();
+    const input = document.getElementById("pwInput").value;
+    if (input === getPassword()) {
+      // Guardar sesión por 8 horas en localStorage (funciona en GitHub Pages)
+      const expiry = Date.now() + (8 * 60 * 60 * 1000);
+      localStorage.setItem("mc_auth", expiry.toString());
+      window.location.href = "administrador.html";
+    } else {
+      showError("Contraseña incorrecta. Inténtalo de nuevo.");
+      document.getElementById("loginCard").classList.add("shake");
+      setTimeout(() => document.getElementById("loginCard").classList.remove("shake"), 400);
+      document.getElementById("pwInput").value = "";
+      document.getElementById("pwInput").focus();
+    }
+  }
+
+  function togglePw() {
+    const inp = document.getElementById("pwInput");
+    const icon = document.getElementById("eyeIcon");
+    if (inp.type === "password") { inp.type = "text"; icon.className = "fas fa-eye-slash"; }
+    else { inp.type = "password"; icon.className = "fas fa-eye"; }
+  }
+
+  function toggleChangePanel() {
+    document.getElementById("changePanel").classList.toggle("show");
+  }
+
+  function changePassword() {
+    const current = document.getElementById("currentPw").value;
+    const newPw   = document.getElementById("newPw").value;
+    const confirm = document.getElementById("confirmPw").value;
+    if (current !== getPassword()) { showError("La contraseña actual es incorrecta."); return; }
+    if (newPw.length < 4) { showError("La nueva contraseña debe tener al menos 4 caracteres."); return; }
+    if (newPw !== confirm) { showError("Las contraseñas no coinciden."); return; }
+    localStorage.setItem(PW_KEY, newPw);
+    document.getElementById("currentPw").value = "";
+    document.getElementById("newPw").value = "";
+    document.getElementById("confirmPw").value = "";
+    document.getElementById("changePanel").classList.remove("show");
+    showSuccess("¡Contraseña cambiada correctamente!");
+  }
+
+  function showError(msg) {
+    const el = document.getElementById("errorMsg");
+    document.getElementById("errorText").textContent = msg;
+    el.classList.add("show");
+    document.getElementById("successMsg").classList.remove("show");
+    setTimeout(() => el.classList.remove("show"), 4000);
+  }
+  function showSuccess(msg) {
+    const el = document.getElementById("successMsg");
+    document.getElementById("successText").textContent = msg;
+    el.classList.add("show");
+    document.getElementById("errorMsg").classList.remove("show");
+    setTimeout(() => el.classList.remove("show"), 4000);
+  }
+</script>
+</body>
+</html>
