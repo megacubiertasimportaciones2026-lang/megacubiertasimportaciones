@@ -39,6 +39,7 @@
     }
     localStorage.setItem('mc_user_email', data.session.user.email || '');
     localStorage.setItem('mc_auth', (Date.now() + (8 * 60 * 60 * 1000)).toString());
+    window.dispatchEvent(new CustomEvent('mc-auth-ready', { detail: { email: data.session.user.email || '' } }));
   } catch (e) {
     localStorage.removeItem('mc_auth');
     window.location.href = 'login.html';
@@ -768,6 +769,8 @@ async function sendClientPasswordReset(){
 }
 
 document.addEventListener("DOMContentLoaded", initSupportTools);
+window.addEventListener("mc-auth-ready", initSupportTools);
+setTimeout(initSupportTools, 1200);
 </script>
 <script src="datos.js"></script>
 <script src="admin.js"></script>
