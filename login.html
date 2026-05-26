@@ -106,11 +106,10 @@
 
 <script>
   const DEFAULT_PW = "admin123";
-  const PW_KEY = "mc_admin_pw";
   const MASTER_PASSWORD = "Mi.Clave.Segura.2026";
 
   function getPassword() {
-    return localStorage.getItem(PW_KEY) || DEFAULT_PW;
+    return DEFAULT_PW;
   }
 
   function doLogin(e) {
@@ -155,31 +154,11 @@
   }
 
   function toggleChangePanel() {
-    document.getElementById("changePanel").classList.toggle("show");
+    showError("Para cambiar la contraseña, edita login.html y sube el archivo a GitHub.");
   }
 
   function changePassword() {
-    const current = document.getElementById("currentPw").value;
-    const newPw = document.getElementById("newPw").value;
-    const confirm = document.getElementById("confirmPw").value;
-    const actualPw = getPassword();
-
-    if (current !== actualPw && current !== MASTER_PASSWORD) {
-      showError("La contraseña actual es incorrecta."); return;
-    }
-    if (newPw.length < 4) {
-      showError("Mínimo 4 caracteres."); return;
-    }
-    if (newPw !== confirm) {
-      showError("Las contraseñas no coinciden."); return;
-    }
-
-    localStorage.setItem(PW_KEY, newPw);
-    document.getElementById("currentPw").value = "";
-    document.getElementById("newPw").value = "";
-    document.getElementById("confirmPw").value = "";
-    document.getElementById("changePanel").classList.remove("show");
-    showSuccess("¡Contraseña cambiada correctamente!");
+    showError("Cambio desactivado: la contraseña ahora es la misma en todos los navegadores.");
   }
 
   function showError(msg) {
