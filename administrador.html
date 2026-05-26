@@ -19,14 +19,27 @@
     details[open]>summary{border-bottom:1px solid rgba(201,168,76,0.2)}
     details .drop-zone{margin:12px;border-radius:8px}
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
 </head>
 <body>
 
 <script>
-// Verificar autenticación - usando localStorage para compatibilidad con GitHub Pages
-(function(){
-  const auth = localStorage.getItem('mc_auth');
-  if (!auth || Date.now() > parseInt(auth)) {
+// Verificar autenticación con Supabase Auth.
+(async function(){
+  try {
+    const cfg = window.MC_SUPABASE_CONFIG || {};
+    const client = window.supabase.createClient(cfg.url, cfg.anonKey);
+    window.__MC_AUTH_CLIENT__ = client;
+    const { data } = await client.auth.getSession();
+    if (!data || !data.session) {
+      localStorage.removeItem('mc_auth');
+      window.location.href = 'login.html';
+      return;
+    }
+    localStorage.setItem('mc_user_email', data.session.user.email || '');
+    localStorage.setItem('mc_auth', (Date.now() + (8 * 60 * 60 * 1000)).toString());
+  } catch (e) {
     localStorage.removeItem('mc_auth');
     window.location.href = 'login.html';
   }
@@ -44,6 +57,10 @@
     <div class="admin-nav-right">
       <span class="admin-link" style="color:var(--gold)"><i class="fas fa-circle" style="font-size:8px;color:#4CAF50"></i> En vivo</span>
       <span class="sep">|</span>
+      <button id="supportResetBtn" onclick="sendClientPasswordReset()" style="display:none;background:rgba(201,168,76,0.12);color:var(--gold);border:1px solid var(--border);padding:9px 14px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;align-items:center;gap:8px">
+        <i class="fas fa-key"></i> Resetear clave cliente
+      </button>
+      <span class="sep support-sep" style="display:none">|</span>
       <a href="index.html" target="_blank" class="admin-link gold"><i class="fas fa-external-link-alt"></i> Ver sitio</a>
       <span class="sep">|</span>
       <button onclick="publicarCambios()" style="background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;padding:9px 20px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;display:flex;align-items:center;gap:8px;transition:all 0.2s;box-shadow:0 4px 14px rgba(37,211,102,0.35)" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
@@ -710,9 +727,48 @@
 </div>
 <div class="toast" id="toast"></div>
 
-<script>function doLogout(){localStorage.removeItem("mc_auth");window.location.href="login.html";}</script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-config.js"></script>
+<script>
+const CLIENT_ADMIN_EMAIL = "admin@megacubiertasimportaciones.com";
+
+async function doLogout(){
+  localStorage.removeItem("mc_auth");
+  localStorage.removeItem("mc_user_email");
+  if (window.__MC_AUTH_CLIENT__) await window.__MC_AUTH_CLIENT__.auth.signOut();
+  window.location.href="login.html";
+}
+
+function initSupportTools(){
+  var email = (localStorage.getItem("mc_user_email") || "").toLowerCase();
+  if (email && email !== CLIENT_ADMIN_EMAIL) {
+    var btn = document.getElementById("supportResetBtn");
+    var sep = document.querySelector(".support-sep");
+    if (btn) btn.style.display = "inline-flex";
+    if (sep) sep.style.display = "inline";
+  }
+}
+
+async function sendClientPasswordReset(){
+  if (!confirm("¿Enviar correo de recuperación al cliente?")) return;
+  try {
+    var client = window.__MC_AUTH_CLIENT__;
+    if (!client) {
+      var cfg = window.MC_SUPABASE_CONFIG || {};
+      client = window.supabase.createClient(cfg.url, cfg.anonKey);
+    }
+    var result = await client.auth.resetPasswordForEmail(CLIENT_ADMIN_EMAIL, {
+      redirectTo: window.location.origin + "/login.html"
+    });
+    if (result.error) throw result.error;
+    if (typeof showToast === "function") showToast("Correo de recuperación enviado al cliente");
+    else alert("Correo de recuperación enviado al cliente");
+  } catch (e) {
+    if (typeof showToast === "function") showToast("No se pudo enviar el correo: " + e.message, true);
+    else alert("No se pudo enviar el correo: " + e.message);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", initSupportTools);
+</script>
 <script src="datos.js"></script>
 <script src="admin.js"></script>
 </body>

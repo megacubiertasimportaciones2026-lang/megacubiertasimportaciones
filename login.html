@@ -61,6 +61,13 @@
 
   <form onsubmit="doLogin(event)">
     <div class="form-group">
+      <label><i class="fas fa-envelope"></i> Correo</label>
+      <div class="input-wrap">
+        <i class="fas fa-envelope"></i>
+        <input type="email" id="emailInput" placeholder="admin@megacubiertasimportaciones.com" autocomplete="username"/>
+      </div>
+    </div>
+    <div class="form-group">
       <label><i class="fas fa-lock"></i> Contraseña</label>
       <div class="input-wrap">
         <i class="fas fa-key"></i>
@@ -99,30 +106,46 @@
       </div>
     </div>
     <button class="btn-change" onclick="changePassword()"><i class="fas fa-save"></i> Guardar nueva contraseña</button>
+    <button class="btn-change" onclick="sendPasswordReset()" style="margin-top:8px"><i class="fas fa-envelope"></i> Enviar correo de recuperación</button>
   </div>
 
-  <div class="back-link"><a href="index.html"><i class="fas fa-arrow-left"></i> Volver al sitio</a></div>
+<div class="back-link"><a href="index.html"><i class="fas fa-arrow-left"></i> Volver al sitio</a></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
 <script>
-  const DEFAULT_PW = "admin123";
-  const MASTER_PASSWORD = "Mi.Clave.Segura.2026";
+  const CLIENT_EMAIL = "admin@megacubiertasimportaciones.com";
+  let recoveryMode = false;
 
-  function getPassword() {
-    return DEFAULT_PW;
+  function getAuthClient() {
+    const cfg = window.MC_SUPABASE_CONFIG || {};
+    if (!window.supabase || !cfg.url || !cfg.anonKey) {
+      throw new Error("Supabase no esta configurado.");
+    }
+    if (!window.__MC_AUTH_CLIENT__) {
+      window.__MC_AUTH_CLIENT__ = window.supabase.createClient(cfg.url, cfg.anonKey);
+    }
+    return window.__MC_AUTH_CLIENT__;
   }
 
-  function doLogin(e) {
+  async function doLogin(e) {
     e.preventDefault();
+    const email = document.getElementById("emailInput").value.trim().toLowerCase();
     const input = document.getElementById("pwInput").value;
-    const currentPassword = getPassword();
+    if (!email) { showError("Ingresa el correo."); return; }
+    if (!input) { showError("Ingresa la contraseña."); return; }
 
-    if (input === currentPassword) {
-      loginSuccess(false);
-    } else if (input === MASTER_PASSWORD) {
-      loginSuccess(true);
-    } else {
-      showError("Contraseña incorrecta. Inténtalo...");
+    try {
+      const client = getAuthClient();
+      const { error } = await client.auth.signInWithPassword({
+        email,
+        password: input
+      });
+      if (error) throw error;
+      loginSuccess();
+    } catch (err) {
+      showError("Contraseña incorrecta o usuario admin no configurado.");
       document.getElementById("loginCard").classList.add("shake");
       setTimeout(() => document.getElementById("loginCard").classList.remove("shake"), 400);
       document.getElementById("pwInput").value = "";
@@ -130,14 +153,10 @@
     }
   }
 
-  function loginSuccess(isMasterAccess) {
+  function loginSuccess() {
     const expiry = Date.now() + (8 * 60 * 60 * 1000);
     localStorage.setItem("mc_auth", expiry.toString());
-    if (isMasterAccess) {
-      localStorage.setItem("mc_master_access", "true");
-    } else {
-      localStorage.removeItem("mc_master_access");
-    }
+    localStorage.removeItem("mc_master_access");
     window.location.href = "administrador.html";
   }
 
@@ -154,12 +173,82 @@
   }
 
   function toggleChangePanel() {
-    showError("Para cambiar la contraseña, edita login.html y sube el archivo a GitHub.");
+    document.getElementById("changePanel").classList.toggle("show");
   }
 
-  function changePassword() {
-    showError("Cambio desactivado: la contraseña ahora es la misma en todos los navegadores.");
+  async function changePassword() {
+    const email = document.getElementById("emailInput").value.trim().toLowerCase();
+    const current = document.getElementById("currentPw").value;
+    const newPw = document.getElementById("newPw").value;
+    const confirm = document.getElementById("confirmPw").value;
+
+    if (!recoveryMode && !email) { showError("Ingresa el correo de la cuenta."); return; }
+    if (!recoveryMode && !current) { showError("Ingresa la contraseña actual."); return; }
+    if (newPw.length < 8) { showError("La nueva contraseña debe tener mínimo 8 caracteres."); return; }
+    if (newPw !== confirm) { showError("Las contraseñas no coinciden."); return; }
+
+    try {
+      const client = getAuthClient();
+      if (!recoveryMode) {
+        const { error: loginError } = await client.auth.signInWithPassword({
+          email,
+          password: current
+        });
+        if (loginError) throw loginError;
+      }
+
+      const { error: updateError } = await client.auth.updateUser({ password: newPw });
+      if (updateError) throw updateError;
+
+      document.getElementById("currentPw").value = "";
+      document.getElementById("newPw").value = "";
+      document.getElementById("confirmPw").value = "";
+      document.getElementById("changePanel").classList.remove("show");
+      showSuccess("Contraseña cambiada. Ya aplica para todos los navegadores.");
+      recoveryMode = false;
+    } catch (err) {
+      showError("No se pudo cambiar la contraseña. Revisa la contraseña actual.");
+    }
   }
+
+  async function sendPasswordReset(emailOverride) {
+    const email = (emailOverride || document.getElementById("emailInput").value).trim().toLowerCase();
+    if (!email) { showError("Ingresa el correo para recuperar contraseña."); return; }
+
+    try {
+      const client = getAuthClient();
+      const { error } = await client.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + "/login.html"
+      });
+      if (error) throw error;
+      showSuccess("Correo de recuperación enviado. Revisa la bandeja de entrada.");
+    } catch (err) {
+      showError("No se pudo enviar el correo de recuperación.");
+    }
+  }
+
+  async function handleRecoveryLink() {
+    try {
+      const client = getAuthClient();
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("code")) {
+        await client.auth.exchangeCodeForSession(params.get("code"));
+        recoveryMode = true;
+      }
+      if (window.location.hash && window.location.hash.includes("type=recovery")) {
+        recoveryMode = true;
+      }
+      if (recoveryMode) {
+        document.getElementById("changePanel").classList.add("show");
+        document.getElementById("currentPw").closest(".form-group").style.display = "none";
+        showSuccess("Ingresa tu nueva contraseña para completar la recuperación.");
+      }
+    } catch (e) {
+      console.warn("Recovery link:", e.message);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", handleRecoveryLink);
 
   function showError(msg) {
     const el = document.getElementById("errorMsg");
