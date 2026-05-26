@@ -32,6 +32,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+window.addEventListener("mc:data-ready", (e) => {
+  if (!e.detail) return;
+  currentData = JSON.parse(JSON.stringify(e.detail));
+  SITE_DATA = currentData;
+  renderAll();
+  loadContentFields();
+  loadMVFields();
+  loadTemaFields();
+  showToast("Datos sincronizados desde Supabase");
+});
+
 function renderAll() {
   renderProductsAdmin();
   renderGaleriaAdmin();
@@ -43,8 +54,12 @@ function renderAll() {
 
 // ── PERSIST ──────────────────────────────────────────────────
 function persist() {
-  saveSiteData(currentData);
   SITE_DATA = currentData;
+  return saveSiteData(currentData).catch((e) => {
+    console.error("Error guardando en Supabase:", e);
+    showToast("Guardado local, pero fallo Supabase: " + e.message, true);
+    throw e;
+  });
 }
 
 // ── TOAST ────────────────────────────────────────────────────
@@ -99,7 +114,7 @@ function setVal(id, val) { const el = document.getElementById(id); if (el) el.va
 function getVal(id) { const el = document.getElementById(id); return el ? el.value : ""; }
 
 // ── CARGAR IMAGEN DESDE PC (base64) ──────────────────────────
-function setupImageUpload(dropZoneId, inputId, previewId, onResult) {
+function setupImageUpload(dropZoneId, inputId, previewId, onResult, folder = "uploads") {
   const dropZone = document.getElementById(dropZoneId);
   const fileInput = document.getElementById(inputId);
   if (!dropZone || !fileInput) return;
@@ -115,18 +130,27 @@ function setupImageUpload(dropZoneId, inputId, previewId, onResult) {
     handleFile(e.dataTransfer.files[0]);
   });
 
-  function handleFile(file) {
+  async function handleFile(file) {
     if (!file || !file.type.startsWith("image/")) { showToast("Solo imágenes (JPG, PNG, WebP)", true); return; }
     if (file.size > 5 * 1024 * 1024) { showToast("Imagen muy grande (máx 5MB)", true); return; }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64 = e.target.result;
+    try {
+      showToast("Subiendo imagen...");
+      const imageUrl = await window.uploadImageFileToSupabase(file, folder);
       const preview = document.getElementById(previewId);
-      if (preview) { preview.src = base64; preview.style.display = "block"; }
-      onResult(base64);
-    };
-    reader.readAsDataURL(file);
+      if (preview) { preview.src = imageUrl; preview.style.display = "block"; }
+      onResult(imageUrl);
+      showToast("Imagen lista");
+    } catch (e) {
+      console.error("Error subiendo imagen:", e);
+      showToast("No se pudo subir la imagen: " + e.message, true);
+    }
   }
+}
+
+async function storeImageFile(file, folder) {
+  if (!file || !file.type.startsWith("image/")) throw new Error("Solo imágenes (JPG, PNG, WebP)");
+  if (file.size > 5 * 1024 * 1024) throw new Error("Imagen muy grande (máx 5MB)");
+  return window.uploadImageFileToSupabase(file, folder || "uploads");
 }
 
 // ── CONTENT FIELDS ───────────────────────────────────────────
@@ -179,7 +203,7 @@ function loadContentFields() {
   });
 }
 
-function saveChanges() {
+async function saveChanges() {
   const d = currentData;
   d.contacto.whatsappNumbers = [];
   [[getVal("wa1"), getVal("wa1Label")], [getVal("wa2"), getVal("wa2Label")], [getVal("wa3"), getVal("wa3Label")]].forEach(([n, l]) => {
@@ -211,7 +235,7 @@ function saveChanges() {
   d.mapa.embedUrl = getVal("mapaEmbedUrl");
   d.mapa.mapsLink = getVal("mapaDirectLink");
 
-  persist();
+  await persist();
   showToast("✅ Cambios guardados — la página se actualizó");
 }
 
@@ -600,25 +624,22 @@ function pacRemoveCaract(i, ci) {
   currentData.productos[i].caracteristicas.splice(ci, 1);
   persist(); pacRefreshLists(i); renderProductsAdmin(); togglePacDetails(i);
 }
-function pacAddFotos(i, input) {
+async function pacAddFotos(i, input) {
   var p = currentData.productos[i];
   if (!p.fotos) p.fotos = p.imagen ? [p.imagen] : [];
   var files = Array.from(input.files);
-  var done = 0;
-  files.forEach(function(file) {
-    if (file.size > 5*1024*1024) { showToast("Imagen muy grande (máx 5MB)", true); done++; return; }
-    var r = new FileReader();
-    r.onload = function(e) {
-      p.fotos.push(e.target.result);
-      if (!p.imagen) p.imagen = e.target.result;
-      done++;
-      if (done === files.length) {
-        persist(); pacRefreshLists(i); renderProductsAdmin(); togglePacDetails(i);
-        showToast("✅ " + files.length + " foto(s) agregada(s)");
-      }
-    };
-    r.readAsDataURL(file);
-  });
+  try {
+    showToast("Subiendo " + files.length + " foto(s)...");
+    for (const file of files) {
+      const url = await storeImageFile(file, "productos");
+      p.fotos.push(url);
+      if (!p.imagen) p.imagen = url;
+    }
+    await persist(); pacRefreshLists(i); renderProductsAdmin(); togglePacDetails(i);
+    showToast("✅ " + files.length + " foto(s) agregada(s)");
+  } catch (e) {
+    showToast("No se pudo subir una foto: " + e.message, true);
+  }
 }
 function pacRemoveFoto(i, fi) {
   var p = currentData.productos[i];
@@ -700,7 +721,7 @@ function deleteProdCategoria(ci) {
   persist(); renderProductsAdmin(); showToast("Categoría eliminada");
 }
 
-function saveProdCategoria() {
+async function saveProdCategoria() {
   var nombre = getVal("catNombre").trim();
   if (!nombre) { showToast("El nombre es requerido", true); return; }
   if (!currentData.categoriasProducto) currentData.categoriasProducto = [];
@@ -715,7 +736,7 @@ function saveProdCategoria() {
   };
   if (editingProdCatIdx2 !== null) { currentData.categoriasProducto[editingProdCatIdx2] = cat; }
   else { currentData.categoriasProducto.push(cat); }
-  persist(); renderProductsAdmin(); closeModal("categoriaModal");
+  await persist(); renderProductsAdmin(); closeModal("categoriaModal");
   showToast(editingProdCatIdx2 !== null ? "✅ Categoría actualizada" : "✅ Categoría creada");
 }
 
@@ -768,19 +789,22 @@ function openProdItemModal(ci, ii) {
   setTimeout(function(){
     setupImageUpload("itemDropZone","itemImgFile","itemImgPreview",function(b64){ _prodItemImgB64=b64; });
     var multi = document.getElementById("itemFotosFile");
-    multi.onchange = function(){
-      Array.from(multi.files).forEach(function(file){
-        var r2 = new FileReader();
-        r2.onload = function(e){
-          _prodItemFotosB64.push(e.target.result);
+    multi.onchange = async function(){
+      try {
+        showToast("Subiendo fotos...");
+        for (const file of Array.from(multi.files)) {
+          const url = await storeImageFile(file, "productos");
+          _prodItemFotosB64.push(url);
           var fp2 = document.getElementById("itemFotosPreview");
           var img = document.createElement("img");
-          img.src = e.target.result;
+          img.src = url;
           img.style = "width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--gold)";
           fp2.appendChild(img);
-        };
-        r2.readAsDataURL(file);
-      });
+        }
+        showToast("Fotos listas");
+      } catch (e) {
+        showToast("No se pudo subir una foto: " + e.message, true);
+      }
     };
   }, 100);
 }
@@ -794,7 +818,7 @@ function deleteProdItem(ci, ii) {
   persist(); renderProductsAdmin(); showToast("Producto eliminado");
 }
 
-function saveProdItem() {
+async function saveProdItem() {
   var nombre = getVal("itemNombre").trim();
   if (!nombre) { showToast("El nombre es requerido", true); return; }
   var cat = currentData.categoriasProducto[editingProdItemCi];
@@ -826,7 +850,7 @@ function saveProdItem() {
   if (!cat.items) cat.items = [];
   if (editingProdItemIdx2 !== null) { cat.items[editingProdItemIdx2] = item; }
   else { cat.items.push(item); }
-  persist(); renderProductsAdmin(); closeModal("itemModal");
+  await persist(); renderProductsAdmin(); closeModal("itemModal");
   showToast(editingProdItemIdx2!==null ? "✅ Producto actualizado" : "✅ Producto agregado");
 }
 
@@ -883,20 +907,20 @@ function piRefreshCaract(ci, ii) {
         "</div>";
     }).join("") + "</div>";
 }
-function addPIFotos(ci, ii, input) {
+async function addPIFotos(ci, ii, input) {
   var p = getPI(ci,ii); if(!p.fotos) p.fotos=p.imagen?[p.imagen]:[];
-  var files = Array.from(input.files), done=0;
-  files.forEach(function(file){
-    if(file.size>5*1024*1024){showToast("Imagen muy grande (máx 5MB)",true);done++;return;}
-    var r=new FileReader();
-    r.onload=function(e){
-      p.fotos.push(e.target.result);
-      if(!p.imagen) p.imagen=e.target.result;
-      done++;
-      if(done===files.length){persist();piRefreshFotos(ci,ii);showToast("✅ "+files.length+" foto(s) agregada(s)");}
-    };
-    r.readAsDataURL(file);
-  });
+  var files = Array.from(input.files);
+  try {
+    showToast("Subiendo " + files.length + " foto(s)...");
+    for (const file of files) {
+      const url = await storeImageFile(file, "productos");
+      p.fotos.push(url);
+      if(!p.imagen) p.imagen=url;
+    }
+    await persist(); piRefreshFotos(ci,ii); showToast("✅ "+files.length+" foto(s) agregada(s)");
+  } catch (e) {
+    showToast("No se pudo subir una foto: " + e.message, true);
+  }
 }
 function removePIFoto(ci, ii, fi) {
   var p=getPI(ci,ii);
@@ -1035,7 +1059,7 @@ function deleteGaleria(idx) {
   persist(); renderGaleriaAdmin(); showToast("Imagen eliminada");
 }
 
-function saveGaleria() {
+async function saveGaleria() {
   const titulo = getVal("gTitulo").trim();
   if (!titulo) { showToast("El título es requerido", true); return; }
   const imgSrc = _galeriaImgB64 || getVal("gImagenUrl").trim() ||
@@ -1043,7 +1067,7 @@ function saveGaleria() {
   const item = { titulo, ubicacion: getVal("gUbicacion"), imagen: imgSrc, categoria: getVal("gCategoria") };
   if (editingGaleriaId !== null) { currentData.galeria[editingGaleriaId] = item; }
   else { currentData.galeria.push(item); }
-  persist(); renderGaleriaAdmin(); closeModal("galeriaModal");
+  await persist(); renderGaleriaAdmin(); closeModal("galeriaModal");
   showToast(editingGaleriaId !== null ? "✅ Imagen actualizada" : "✅ Imagen agregada");
 }
 
@@ -1072,13 +1096,13 @@ function deleteVentaja(idx) {
   if (!confirm("¿Eliminar esta ventaja?")) return;
   currentData.ventajas.splice(idx, 1); persist(); renderVentajasAdmin(); showToast("Ventaja eliminada");
 }
-function saveVentaja() {
+async function saveVentaja() {
   const titulo = getVal("vTitulo").trim();
   if (!titulo) { showToast("El título es requerido", true); return; }
   const item = { titulo, descripcion: getVal("vDesc"), icono: getVal("vIcono") || "fas fa-star" };
   if (editingVentajaId !== null) { currentData.ventajas[editingVentajaId] = item; }
   else { currentData.ventajas.push(item); }
-  persist(); renderVentajasAdmin(); closeModal("ventajaModal");
+  await persist(); renderVentajasAdmin(); closeModal("ventajaModal");
   showToast(editingVentajaId !== null ? "✅ Ventaja actualizada" : "✅ Ventaja agregada");
 }
 
@@ -1138,7 +1162,7 @@ function deleteCategoria(ci) {
   if(!confirm(`¿Eliminar la categoría "${currentData.accesorios[ci].nombre}" y todos sus items?`)) return;
   currentData.accesorios.splice(ci,1); persist(); renderAccesoriosAdmin(); showToast("Categoría eliminada");
 }
-function saveCategoria() {
+async function saveCategoria() {
   const nombre = getVal("catNombre").trim();
   if(!nombre){showToast("El nombre es requerido",true);return;}
   const prev = editingCatIdx!==null ? currentData.accesorios[editingCatIdx] : {};
@@ -1152,7 +1176,7 @@ function saveCategoria() {
   };
   if(editingCatIdx!==null){currentData.accesorios[editingCatIdx]=cat;}
   else{currentData.accesorios.push(cat);}
-  persist(); renderAccesoriosAdmin(); closeModal("categoriaModal");
+  await persist(); renderAccesoriosAdmin(); closeModal("categoriaModal");
   showToast(editingCatIdx!==null?"✅ Categoría actualizada":"✅ Categoría agregada");
 }
 
@@ -1192,19 +1216,22 @@ function openItemModal(ci, ii=null) {
     setupImageUpload("itemDropZone","itemImgFile","itemImgPreview",(b64)=>{_itemImgB64=b64;});
     // Multiple photos upload
     const multi=document.getElementById("itemFotosFile");
-    multi.onchange=()=>{
-      Array.from(multi.files).forEach(file=>{
-        const r=new FileReader();
-        r.onload=e=>{
-          _itemFotosB64.push(e.target.result);
+    multi.onchange=async ()=>{
+      try {
+        showToast("Subiendo fotos...");
+        for (const file of Array.from(multi.files)) {
+          const url = await storeImageFile(file, "accesorios");
+          _itemFotosB64.push(url);
           const fp=document.getElementById("itemFotosPreview");
           const img=document.createElement("img");
-          img.src=e.target.result;
+          img.src=url;
           img.style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--gold)";
           fp.appendChild(img);
-        };
-        r.readAsDataURL(file);
-      });
+        }
+        showToast("Fotos listas");
+      } catch (e) {
+        showToast("No se pudo subir una foto: " + e.message, true);
+      }
     };
   },100);
 }
@@ -1214,7 +1241,7 @@ function deleteItem(ci,ii){
   currentData.accesorios[ci].items.splice(ii,1);
   persist(); renderAccesoriosAdmin(); showToast("Accesorio eliminado");
 }
-function saveItem(){
+async function saveItem(){
   const nombre=getVal("itemNombre").trim();
   if(!nombre){showToast("El nombre es requerido",true);return;}
   const prev=editingItemIdx!==null?currentData.accesorios[currentCatIdx].items[editingItemIdx]:{};
@@ -1241,7 +1268,7 @@ function saveItem(){
   if(!currentData.accesorios[currentCatIdx].items) currentData.accesorios[currentCatIdx].items=[];
   if(editingItemIdx!==null){currentData.accesorios[currentCatIdx].items[editingItemIdx]=item;}
   else{currentData.accesorios[currentCatIdx].items.push(item);}
-  persist(); renderAccesoriosAdmin(); closeModal("itemModal");
+  await persist(); renderAccesoriosAdmin(); closeModal("itemModal");
   showToast(editingItemIdx!==null?"✅ Accesorio actualizado":"✅ Accesorio agregado");
 }
 
@@ -1271,7 +1298,7 @@ function syncColorPreviews() {
   });
 }
 
-function saveTema() {
+async function saveTema() {
   if (!currentData.tema) currentData.tema = {};
   currentData.tema.colorPrimario   = getVal("tColorPrimario");
   currentData.tema.colorSecundario = getVal("tColorSecundario");
@@ -1281,7 +1308,7 @@ function saveTema() {
   currentData.tema.colorAccent     = getVal("tColorAccent");
   currentData.tema.fuente          = getVal("tFuente");
   currentData.tema.fuenteTitulos   = getVal("tFuenteTitulos");
-  persist(); showToast("✅ Tema guardado — recarga la página para ver los cambios");
+  await persist(); showToast("✅ Tema guardado — recarga la página para ver los cambios");
 }
 
 function applyTemaPreview() {
@@ -1548,7 +1575,7 @@ function deleteProdCat(idx) {
   persist(); renderProdCatsAdmin(); showToast("Filtro eliminado");
 }
 
-function saveProdCat() {
+async function saveProdCat() {
   var nombre = getVal("pcNombre").trim();
   if (!nombre) { showToast("El nombre es requerido", true); return; }
   var cat = {
@@ -1563,16 +1590,16 @@ function saveProdCat() {
   } else {
     currentData.productoCategorias.push(cat);
   }
-  persist(); renderProdCatsAdmin(); closeModal("prodCatModal");
+  await persist(); renderProdCatsAdmin(); closeModal("prodCatModal");
   showToast(editingProdCatIdx !== null ? "✅ Filtro actualizado" : "✅ Filtro agregado");
 }
 
 // ── MISIÓN & VISIÓN ──────────────────────────────────────────
 function loadMVFields() { setVal("misionAdmin", currentData.misionVision.mision); setVal("visionAdmin", currentData.misionVision.vision); }
-function saveMV() {
+async function saveMV() {
   currentData.misionVision.mision = getVal("misionAdmin");
   currentData.misionVision.vision = getVal("visionAdmin");
-  persist(); showToast("✅ Misión & Visión guardados");
+  await persist(); showToast("✅ Misión & Visión guardados");
 }
 
 // ── MODALES ──────────────────────────────────────────────────

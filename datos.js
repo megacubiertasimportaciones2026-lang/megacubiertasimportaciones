@@ -1,5 +1,5 @@
 // ============================================================
-// DATA.JS v3.0 — SIN localStorage, datos directos del archivo
+// DATA.JS v4.3 - datos base + sincronizacion Supabase
 // ============================================================
 
 const SITE_DATA_DEFAULT = {
@@ -217,13 +217,38 @@ const SITE_DATA_DEFAULT = {
 };
 
 // ── VERSIÓN ──────────────────────────────────────────────────
-const DATA_VERSION = "4.2";
+const DATA_VERSION = "4.3";
+const MC_REMOTE_EVENT = "mc:data-ready";
 
-function getSiteData() {
+function getSupabaseConfig() {
+  return window.MC_SUPABASE_CONFIG || {};
+}
+
+function isSupabaseConfigured() {
+  const cfg = getSupabaseConfig();
+  return !!(
+    window.supabase &&
+    cfg.url &&
+    cfg.anonKey &&
+    !cfg.url.includes("PEGA_AQUI") &&
+    !cfg.anonKey.includes("PEGA_AQUI")
+  );
+}
+
+let mcSupabaseClient = null;
+function getSupabaseClient() {
+  if (!isSupabaseConfigured()) return null;
+  if (!mcSupabaseClient) {
+    const cfg = getSupabaseConfig();
+    mcSupabaseClient = window.supabase.createClient(cfg.url, cfg.anonKey);
+  }
+  return mcSupabaseClient;
+}
+
+function getLocalSiteData() {
   try {
     const savedVer = localStorage.getItem("mc_ver");
-    const saved    = localStorage.getItem("mc_data");
-    // If version changed, clear stored data and use new defaults
+    const saved = localStorage.getItem("mc_data");
     if (savedVer !== DATA_VERSION) {
       localStorage.removeItem("mc_data");
       localStorage.setItem("mc_ver", DATA_VERSION);
@@ -236,17 +261,118 @@ function getSiteData() {
       }
     }
   } catch(e) {
-    console.warn("Error leyendo datos:", e.message);
+    console.warn("Error leyendo datos locales:", e.message);
     localStorage.removeItem("mc_data");
   }
   localStorage.setItem("mc_ver", DATA_VERSION);
   return deepClone(SITE_DATA_DEFAULT);
 }
 
-function saveSiteData(data) {
+function writeLocalSiteData(data) {
   localStorage.setItem("mc_data", JSON.stringify(data));
   localStorage.setItem("mc_ver", DATA_VERSION);
   localStorage.setItem("mc_ts", Date.now().toString());
+}
+
+function getSiteData() {
+  return getLocalSiteData();
+}
+
+function saveSiteData(data) {
+  writeLocalSiteData(data);
+  return saveSiteDataToCloud(data);
+}
+
+async function saveSiteDataToCloud(data) {
+  const client = getSupabaseClient();
+  if (!client) return { ok: true, localOnly: true };
+
+  const cfg = getSupabaseConfig();
+  const row = {
+    id: cfg.siteId || "megacubiertas",
+    data,
+    updated_at: new Date().toISOString()
+  };
+
+  const { error } = await client
+    .from(cfg.table || "site_content")
+    .upsert(row, { onConflict: "id" });
+
+  if (error) throw error;
+  return { ok: true, localOnly: false };
+}
+
+async function fetchSiteDataFromCloud() {
+  const client = getSupabaseClient();
+  if (!client) return null;
+
+  const cfg = getSupabaseConfig();
+  const { data, error } = await client
+    .from(cfg.table || "site_content")
+    .select("data,updated_at")
+    .eq("id", cfg.siteId || "megacubiertas")
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+async function applyCloudSiteData() {
+  const remote = await fetchSiteDataFromCloud();
+  if (!remote || !remote.data) return null;
+
+  const merged = deepMerge(deepClone(SITE_DATA_DEFAULT), remote.data);
+  const before = localStorage.getItem("mc_data") || "";
+  const after = JSON.stringify(merged);
+  writeLocalSiteData(merged);
+  SITE_DATA = merged;
+
+  window.dispatchEvent(new CustomEvent(MC_REMOTE_EVENT, { detail: merged }));
+
+  if (!window.__IS_ADMIN__ && before !== after) {
+    const key = "mc_remote_loaded_" + (remote.updated_at || Date.now());
+    if (!sessionStorage.getItem(key)) {
+      sessionStorage.setItem(key, "1");
+      location.reload();
+    }
+  }
+
+  return merged;
+}
+
+async function uploadImageFileToSupabase(file, folder) {
+  const client = getSupabaseClient();
+  if (!client) return readFileAsDataURL(file);
+
+  const cfg = getSupabaseConfig();
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const cleanFolder = (folder || "uploads").replace(/[^a-z0-9-_/]/gi, "-");
+  const path = cleanFolder + "/" + Date.now() + "-" + Math.random().toString(36).slice(2) + "." + ext;
+
+  const { error } = await client.storage
+    .from(cfg.bucket || "megacubiertas-images")
+    .upload(path, file, {
+      cacheControl: "31536000",
+      upsert: false,
+      contentType: file.type || "image/jpeg"
+    });
+
+  if (error) throw error;
+
+  const { data } = client.storage
+    .from(cfg.bucket || "megacubiertas-images")
+    .getPublicUrl(path);
+
+  return data.publicUrl;
+}
+
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = () => reject(reader.error || new Error("No se pudo leer la imagen"));
+    reader.readAsDataURL(file);
+  });
 }
 
 function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
@@ -271,3 +397,11 @@ window.addEventListener("storage", (e) => {
 });
 
 let SITE_DATA = getSiteData();
+
+if (typeof window !== "undefined") {
+  window.uploadImageFileToSupabase = uploadImageFileToSupabase;
+  window.refreshSiteDataFromCloud = applyCloudSiteData;
+  document.addEventListener("DOMContentLoaded", () => {
+    applyCloudSiteData().catch((e) => console.warn("No se pudo sincronizar Supabase:", e.message));
+  });
+}
