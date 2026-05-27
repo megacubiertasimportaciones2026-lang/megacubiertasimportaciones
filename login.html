@@ -132,7 +132,7 @@
   async function doLogin(e) {
     e.preventDefault();
     const email = document.getElementById("emailInput").value.trim().toLowerCase();
-    const input = document.getElementById("pwInput").value;
+    const input = document.getElementById("pwInput").value.trim();
     if (!email) { showError("Ingresa el correo."); return; }
     if (!input) { showError("Ingresa la contraseña."); return; }
 
@@ -145,7 +145,14 @@
       if (error) throw error;
       loginSuccess();
     } catch (err) {
-      showError("Contraseña incorrecta o usuario admin no configurado.");
+      const msg = (err && err.message) ? err.message : "";
+      if (msg.toLowerCase().includes("email not confirmed")) {
+        showError("El usuario no esta confirmado en Supabase. Activa Auto confirm o confirma el correo.");
+      } else if (msg.toLowerCase().includes("invalid login credentials")) {
+        showError("Correo o contraseña incorrectos en Supabase.");
+      } else {
+        showError("No se pudo ingresar: " + (msg || "revisa el usuario en Supabase."));
+      }
       document.getElementById("loginCard").classList.add("shake");
       setTimeout(() => document.getElementById("loginCard").classList.remove("shake"), 400);
       document.getElementById("pwInput").value = "";
