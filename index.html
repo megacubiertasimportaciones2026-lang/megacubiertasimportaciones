@@ -10,6 +10,15 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 </head>
 <body>
+<script>
+  if (window.location.hash && (
+    window.location.hash.includes("type=recovery") ||
+    window.location.hash.includes("error_code=") ||
+    window.location.hash.includes("access_token=")
+  )) {
+    window.location.replace("login.html" + window.location.hash);
+  }
+</script>
 
 <nav id="navbar">
   <div class="nav-container">
