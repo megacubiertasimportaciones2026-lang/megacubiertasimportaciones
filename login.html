@@ -155,6 +155,7 @@
 
   function loginSuccess() {
     const expiry = Date.now() + (8 * 60 * 60 * 1000);
+    sessionStorage.setItem("mc_admin_session", "active");
     localStorage.setItem("mc_auth", expiry.toString());
     localStorage.removeItem("mc_master_access");
     window.location.href = "administrador.html";

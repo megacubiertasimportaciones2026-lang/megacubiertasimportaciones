@@ -32,8 +32,12 @@
     const client = window.supabase.createClient(cfg.url, cfg.anonKey);
     window.__MC_AUTH_CLIENT__ = client;
     const { data } = await client.auth.getSession();
-    if (!data || !data.session) {
+    const activeTabSession = sessionStorage.getItem('mc_admin_session') === 'active';
+    if (!data || !data.session || !activeTabSession) {
       localStorage.removeItem('mc_auth');
+      localStorage.removeItem('mc_user_email');
+      sessionStorage.removeItem('mc_admin_session');
+      await client.auth.signOut();
       window.location.href = 'login.html';
       return;
     }
@@ -64,8 +68,8 @@
       <span class="sep support-sep" style="display:none">|</span>
       <a href="index.html" target="_blank" class="admin-link gold"><i class="fas fa-external-link-alt"></i> Ver sitio</a>
       <span class="sep">|</span>
-      <button onclick="publicarCambios()" style="background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;padding:9px 20px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;display:flex;align-items:center;gap:8px;transition:all 0.2s;box-shadow:0 4px 14px rgba(37,211,102,0.35)" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-        <i class="fas fa-rocket"></i> Publicar Cambios
+      <button onclick="doLogout()" style="background:rgba(232,64,64,0.12);color:#ff6b6b;border:1px solid rgba(232,64,64,0.35);padding:9px 14px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-sign-out-alt"></i> Cerrar sesion
       </button>
     </div>
   </div>
@@ -734,6 +738,7 @@ const CLIENT_ADMIN_EMAIL = "megacubiertasimportaciones2026@gmail.com";
 async function doLogout(){
   localStorage.removeItem("mc_auth");
   localStorage.removeItem("mc_user_email");
+  sessionStorage.removeItem("mc_admin_session");
   if (window.__MC_AUTH_CLIENT__) await window.__MC_AUTH_CLIENT__.auth.signOut();
   window.location.href="login.html";
 }
