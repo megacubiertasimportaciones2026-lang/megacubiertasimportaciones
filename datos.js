@@ -24,8 +24,8 @@ const SITE_DATA_DEFAULT = {
     youtube: "#"
   },
   mapa: {
-    embedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d989.4!2d-78.62!3d-1.254!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMcKwMTUnMTUuNSJTIDc4wrAzNycxMi40Ilc!5e0!3m2!1ses!2sec!4v1700000000000",
-    mapsLink: "https://maps.google.com/?q=Av.+Bolivariana+y+Convenio+de+San+Agust%C3%ADn,+Ambato,+Ecuador"
+    embedUrl: "https://maps.google.com/maps?q=-1.26599454,-78.61202008&z=17&output=embed",
+    mapsLink: "https://maps.google.com/?q=-1.26599454,-78.61202008"
   },
   hero: {
     badge: "Megacubiertas Importaciones • Importadores directos en Ambato, Ecuador",
